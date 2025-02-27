@@ -3,81 +3,81 @@ import { Building, Car, Computer, Wrench } from "lucide-react";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Navbar } from "@/components/Navbar";
+import { BottomNav } from "@/components/BottomNav";
 
-// Mock data for initial display
 const featuredProducts = [
   {
     id: "1",
-    title: "Modern Apartment in Downtown",
+    title: "شقة حديثة في وسط المدينة",
     price: 250000,
     image: "https://images.unsplash.com/photo-1527576539890-dfa815648363",
-    category: "Houses",
-    location: "Downtown"
+    category: "عقارات",
+    location: "وسط المدينة"
   },
   {
     id: "2",
-    title: "MacBook Pro 16-inch",
+    title: "ماك بوك برو 16 انش",
     price: 2499,
     image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334",
-    category: "Tech",
-    location: "City Center"
+    category: "تقنية",
+    location: "مركز المدينة"
   },
   {
     id: "3",
-    title: "Web Development Services",
+    title: "خدمات تطوير مواقع",
     price: 500,
     image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
-    category: "Services",
-    location: "Remote"
+    category: "خدمات",
+    location: "عن بعد"
   }
 ];
 
 const categories = [
   {
-    title: "Cars & Vehicles",
+    title: "سيارات ومركبات",
     icon: <Car className="h-6 w-6" />,
-    description: "Browse cars, motorcycles, and more",
+    description: "تصفح السيارات والدراجات النارية والمزيد",
     href: "/category/vehicles"
   },
   {
-    title: "Real Estate",
+    title: "عقارات",
     icon: <Building className="h-6 w-6" />,
-    description: "Find properties for sale and rent",
+    description: "ابحث عن عقارات للبيع والإيجار",
     href: "/category/real-estate"
   },
   {
-    title: "Technology",
+    title: "تقنية",
     icon: <Computer className="h-6 w-6" />,
-    description: "Discover the latest gadgets and tech",
+    description: "اكتشف أحدث الأجهزة والتقنيات",
     href: "/category/technology"
   },
   {
-    title: "Services",
+    title: "خدمات",
     icon: <Wrench className="h-6 w-6" />,
-    description: "Professional services and expertise",
+    description: "خدمات مهنية وخبرات متنوعة",
     href: "/category/services"
   }
 ];
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16">
       <Navbar />
       
       <main className="container py-8 space-y-12 animate-fade-in">
         {/* Hero Section */}
         <section className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            Your Trusted Marketplace
+            سوقك الموثوق
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Buy, sell, and exchange items in your local community
+            بيع، شراء، وتبادل المنتجات في مجتمعك المحلي
           </p>
         </section>
 
         {/* Categories */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Browse Categories</h2>
+          <h2 className="text-2xl font-semibold mb-6">تصفح الفئات</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {categories.map((category) => (
               <CategoryCard key={category.title} {...category} />
@@ -87,7 +87,7 @@ const Index = () => {
 
         {/* Featured Listings */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Featured Listings</h2>
+          <h2 className="text-2xl font-semibold mb-6">إعلانات مميزة</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} {...product} />
@@ -95,6 +95,8 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      <BottomNav />
     </div>
   );
 };
