@@ -68,16 +68,16 @@ const Index = () => {
         {/* Hero Section */}
         <section className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            سوقك الموثوق
+            منتجك
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl font-medium text-muted-foreground max-w-2xl mx-auto">
             بيع، شراء، وتبادل المنتجات في مجتمعك المحلي
           </p>
         </section>
 
         {/* Categories */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">تصفح الفئات</h2>
+          <h2 className="text-2xl font-bold mb-6">تصفح الفئات</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {categories.map((category) => (
               <CategoryCard key={category.title} {...category} />
@@ -87,7 +87,7 @@ const Index = () => {
 
         {/* Featured Listings */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">إعلانات مميزة</h2>
+          <h2 className="text-2xl font-bold mb-6">إعلانات مميزة</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} {...product} />

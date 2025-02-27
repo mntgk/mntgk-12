@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, PlusCircle, MessageCircle, User } from "lucide-react";
+import { Home, Search, PlusCircle, Heart, User } from "lucide-react";
 
 export function BottomNav() {
   const location = useLocation();
@@ -10,23 +10,23 @@ export function BottomNav() {
       <div className="flex items-center justify-around">
         <Link to="/" className={`bottom-nav-item ${location.pathname === '/' ? 'active' : ''}`}>
           <Home className="h-6 w-6" />
-          <span className="text-xs">الرئيسية</span>
+          <span className="text-xs font-medium">الرئيسية</span>
         </Link>
         <Link to="/search" className={`bottom-nav-item ${location.pathname === '/search' ? 'active' : ''}`}>
           <Search className="h-6 w-6" />
-          <span className="text-xs">البحث</span>
+          <span className="text-xs font-medium">البحث</span>
         </Link>
         <Link to="/post" className={`bottom-nav-item ${location.pathname === '/post' ? 'active' : ''}`}>
           <PlusCircle className="h-6 w-6" />
-          <span className="text-xs">إضافة إعلان</span>
+          <span className="text-xs font-medium">إضافة إعلان</span>
         </Link>
-        <Link to="/messages" className={`bottom-nav-item ${location.pathname === '/messages' ? 'active' : ''}`}>
-          <MessageCircle className="h-6 w-6" />
-          <span className="text-xs">الرسائل</span>
+        <Link to="/favorites" className={`bottom-nav-item ${location.pathname === '/favorites' ? 'active' : ''}`}>
+          <Heart className="h-6 w-6" />
+          <span className="text-xs font-medium">المفضلة</span>
         </Link>
         <Link to="/profile" className={`bottom-nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
           <User className="h-6 w-6" />
-          <span className="text-xs">حسابي</span>
+          <span className="text-xs font-medium">حسابي</span>
         </Link>
       </div>
     </nav>
