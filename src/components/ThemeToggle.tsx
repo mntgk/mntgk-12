@@ -29,9 +29,15 @@ export function ThemeToggle() {
   };
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} title={isDark ? "الوضع النهاري" : "الوضع الليلي"}>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      onClick={toggleTheme} 
+      title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+      className="btn-hover-effect"
+    >
       {isDark ? (
-        <Sun className="h-5 w-5" />
+        <Sun className="h-5 w-5 text-yellow-400" />
       ) : (
         <Moon className="h-5 w-5" />
       )}
