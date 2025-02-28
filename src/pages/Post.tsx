@@ -18,14 +18,20 @@ const categories = [
 ];
 
 const regions = [
-  "الرياض",
-  "جدة",
-  "مكة المكرمة",
-  "المدينة المنورة",
-  "الدمام",
-  "الخبر",
-  "تبوك",
-  "أبها"
+  "دمشق",
+  "حلب",
+  "حمص",
+  "حماه",
+  "اللاذقية",
+  "طرطوس",
+  "درعا",
+  "السويداء",
+  "القنيطرة",
+  "الرقة",
+  "دير الزور",
+  "الحسكة",
+  "إدلب",
+  "ريف دمشق"
 ];
 
 export default function Post() {
@@ -140,7 +146,7 @@ export default function Post() {
                 className="pl-12"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                ر.س
+                ل.س
               </span>
             </div>
           </div>
