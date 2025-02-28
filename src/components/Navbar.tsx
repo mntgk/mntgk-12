@@ -31,11 +31,16 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>الرياض</DropdownMenuItem>
-              <DropdownMenuItem>جدة</DropdownMenuItem>
-              <DropdownMenuItem>الدمام</DropdownMenuItem>
-              <DropdownMenuItem>مكة المكرمة</DropdownMenuItem>
-              <DropdownMenuItem>المدينة المنورة</DropdownMenuItem>
+              <DropdownMenuItem>دمشق</DropdownMenuItem>
+              <DropdownMenuItem>حلب</DropdownMenuItem>
+              <DropdownMenuItem>حمص</DropdownMenuItem>
+              <DropdownMenuItem>حماه</DropdownMenuItem>
+              <DropdownMenuItem>اللاذقية</DropdownMenuItem>
+              <DropdownMenuItem>طرطوس</DropdownMenuItem>
+              <DropdownMenuItem>درعا</DropdownMenuItem>
+              <DropdownMenuItem>السويداء</DropdownMenuItem>
+              <DropdownMenuItem>القنيطرة</DropdownMenuItem>
+              <DropdownMenuItem>ريف دمشق</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
