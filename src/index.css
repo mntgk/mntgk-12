@@ -27,22 +27,58 @@
     --radius: 0.75rem;
   }
 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142 70% 40%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 142.4 70.6% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 142.4 60% 13.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 142.4 60% 13.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142.4 70.6% 45%;
+  }
+
   html {
     direction: rtl;
     font-family: 'Noto Kufi Arabic', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
+    @apply font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
 
@@ -56,4 +92,16 @@
 
 .bottom-nav-item.active {
   @apply text-primary;
+}
+
+.category-chip {
+  @apply px-4 py-2 text-sm font-medium border rounded-full transition-colors whitespace-nowrap hover:bg-primary/10 dark:hover:bg-primary/20 hover:border-primary;
+}
+
+.category-chip.active {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 dark:hover:bg-primary/80 border-transparent;
+}
+
+.glass-effect {
+  @apply bg-background/80 backdrop-blur-sm dark:bg-background/70;
 }

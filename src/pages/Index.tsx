@@ -1,5 +1,7 @@
 
-import { Building, Car, Computer, Wrench } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Building, Car, Computer, Wrench, Sofa, Shirt, Home as HomeIcon, ChevronLeft } from "lucide-react";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Navbar } from "@/components/Navbar";
@@ -29,66 +31,141 @@ const featuredProducts = [
     image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
     category: "خدمات",
     location: "عن بعد"
+  },
+  {
+    id: "4",
+    title: "سيارة مستعملة بحالة ممتازة",
+    price: 35000,
+    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2",
+    category: "سيارات",
+    location: "الشمال"
+  },
+  {
+    id: "5",
+    title: "أريكة جلدية فاخرة",
+    price: 1200,
+    image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
+    category: "أثاث",
+    location: "حي الميدان"
+  },
+  {
+    id: "6",
+    title: "سماعات Apple AirPods Pro",
+    price: 400,
+    image: "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5",
+    category: "تقنية",
+    location: "المزة"
   }
 ];
 
 const categories = [
   {
-    title: "سيارات ومركبات",
+    title: "سيارات",
     icon: <Car className="h-6 w-6" />,
-    description: "تصفح السيارات والدراجات النارية والمزيد",
     href: "/category/vehicles"
   },
   {
     title: "عقارات",
     icon: <Building className="h-6 w-6" />,
-    description: "ابحث عن عقارات للبيع والإيجار",
     href: "/category/real-estate"
   },
   {
     title: "تقنية",
     icon: <Computer className="h-6 w-6" />,
-    description: "اكتشف أحدث الأجهزة والتقنيات",
     href: "/category/technology"
   },
   {
     title: "خدمات",
     icon: <Wrench className="h-6 w-6" />,
-    description: "خدمات مهنية وخبرات متنوعة",
     href: "/category/services"
+  },
+  {
+    title: "أثاث",
+    icon: <Sofa className="h-6 w-6" />,
+    href: "/category/furniture"
+  },
+  {
+    title: "ملابس",
+    icon: <Shirt className="h-6 w-6" />,
+    href: "/category/clothes"
+  },
+  {
+    title: "أجهزة منزلية",
+    icon: <HomeIcon className="h-6 w-6" />,
+    href: "/category/appliances"
   }
 ];
 
+const popularSearches = [
+  "آيفون", "سامسونج", "لابتوب", "شقق للإيجار", "سيارات", "أثاث مستعمل"
+];
+
 const Index = () => {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-background pb-20">
       <Navbar />
       
-      <main className="container py-8 space-y-12 animate-fade-in">
-        {/* Hero Section */}
-        <section className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            منتجك
-          </h1>
-          <p className="text-xl font-medium text-muted-foreground max-w-2xl mx-auto">
-            بيع، شراء، وتبادل المنتجات في مجتمعك المحلي
-          </p>
+      <main className="container py-4 space-y-6">
+        {/* Categories Scroller */}
+        <section className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+          <div className="flex space-x-2 space-x-reverse">
+            {categories.map((category) => (
+              <button
+                key={category.title}
+                className={`category-chip ${activeCategory === category.title ? 'active' : ''}`}
+                onClick={() => setActiveCategory(
+                  activeCategory === category.title ? null : category.title
+                )}
+              >
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  {category.icon}
+                  <span>{category.title}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         </section>
 
-        {/* Categories */}
+        {/* Popular Searches */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">تصفح الفئات</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category) => (
-              <CategoryCard key={category.title} {...category} />
+          <h3 className="text-lg font-semibold mb-3">عمليات البحث الشائعة</h3>
+          <div className="flex flex-wrap gap-2">
+            {popularSearches.map((search) => (
+              <Link key={search} to={`/search?q=${search}`} className="category-chip">
+                {search}
+              </Link>
             ))}
           </div>
         </section>
 
         {/* Featured Listings */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">إعلانات مميزة</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">الإعلانات المميزة</h3>
+            <Link to="/featured" className="text-primary flex items-center text-sm font-medium">
+              <span>عرض الكل</span>
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {featuredProducts.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        </section>
+
+        {/* Recent Listings */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">أحدث الإعلانات</h3>
+            <Link to="/latest" className="text-primary flex items-center text-sm font-medium">
+              <span>عرض الكل</span>
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}
