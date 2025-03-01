@@ -72,7 +72,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         onClick={handleClick}
         {...props}
-      />
+      >
+        {children}
+      </Comp>
     )
   }
 )

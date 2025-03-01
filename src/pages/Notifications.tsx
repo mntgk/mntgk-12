@@ -91,6 +91,31 @@ const notificationsData = [
     read: true,
     icon: <Calendar className="h-5 w-5 text-purple-500" />
   },
+  // إضافة إشعارات جديدة للإعلانات التي تطابق تفضيلات المستخدم
+  {
+    id: 7,
+    type: "ads",
+    title: { ar: "إعلان جديد يطابق اهتماماتك", en: "New Ad Matching Your Interests" },
+    content: { 
+      ar: "تم إضافة إعلان جديد عن سيارة مرسيدس موديل 2022", 
+      en: "A new Mercedes 2022 model car ad was added" 
+    },
+    time: { ar: "الآن", en: "Just now" },
+    read: false,
+    icon: <Bell className="h-5 w-5 text-blue-500" />
+  },
+  {
+    id: 8,
+    type: "comment",
+    title: { ar: "تعليق جديد", en: "New Comment" },
+    content: { 
+      ar: "علق سمير على إعلانك للهاتف المحمول", 
+      en: "Samir commented on your mobile phone listing" 
+    },
+    time: { ar: "منذ 10 دقائق", en: "10 minutes ago" },
+    read: false,
+    icon: <MessageCircle className="h-5 w-5 text-green-500" />
+  }
 ];
 
 const Notifications = () => {
@@ -104,7 +129,9 @@ const Notifications = () => {
     system: true,
     orders: true,
     newListings: true,
-    events: true
+    events: true,
+    comments: true,
+    adsMatching: true
   });
 
   const markAllAsRead = () => {
@@ -146,7 +173,9 @@ const Notifications = () => {
       system: {ar: "تحديثات النظام", en: "System Updates"},
       orders: {ar: "طلبات التواصل", en: "Contact Requests"},
       newListings: {ar: "الإعلانات الجديدة", en: "New Listings"},
-      events: {ar: "العروض والفعاليات", en: "Offers & Events"}
+      events: {ar: "العروض والفعاليات", en: "Offers & Events"},
+      comments: {ar: "التعليقات", en: "Comments"},
+      adsMatching: {ar: "الإعلانات المطابقة للاهتمامات", en: "Ads Matching Interests"}
     };
     return names[key]?.[lang] || key;
   };
@@ -231,6 +260,20 @@ const Notifications = () => {
                       onCheckedChange={() => toggleNotificationPreference('events')} 
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span>{language === 'ar' ? 'التعليقات' : 'Comments'}</span>
+                    <Switch 
+                      checked={preferences.comments} 
+                      onCheckedChange={() => toggleNotificationPreference('comments')} 
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>{language === 'ar' ? 'الإعلانات المطابقة للاهتمامات' : 'Ads Matching Interests'}</span>
+                    <Switch 
+                      checked={preferences.adsMatching} 
+                      onCheckedChange={() => toggleNotificationPreference('adsMatching')} 
+                    />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -298,6 +341,22 @@ const Notifications = () => {
           >
             <Bell className="h-4 w-4 mr-2" />
             {language === 'ar' ? 'النظام' : 'System'}
+          </Button>
+          <Button 
+            variant={filters.includes('comment') ? "default" : "outline"} 
+            size="sm"
+            onClick={() => filterNotifications('comment')}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'تعليقات' : 'Comments'}
+          </Button>
+          <Button 
+            variant={filters.includes('ads') ? "default" : "outline"} 
+            size="sm"
+            onClick={() => filterNotifications('ads')}
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'إعلانات مطابقة' : 'Matching Ads'}
           </Button>
         </div>
         
