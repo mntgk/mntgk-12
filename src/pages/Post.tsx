@@ -1,10 +1,14 @@
 
 import { useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ImagePlus, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Navbar } from "@/components/Navbar";
+import { BottomNav } from "@/components/BottomNav";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const categories = [
   "سيارات ومركبات",
@@ -34,13 +38,16 @@ const regions = [
   "ريف دمشق"
 ];
 
-export default function Post() {
+const Post = () => {
+  const navigate = useNavigate();
+  const { language } = useLanguage();
   const [images, setImages] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -58,28 +65,79 @@ export default function Post() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !price || !description || !category || !location || images.length === 0) {
-      toast.error("الرجاء إكمال جميع الحقول المطلوبة");
+    if (!title) {
+      toast.error(language === 'ar' ? "الرجاء إدخال عنوان الإعلان" : "Please enter ad title");
+      return;
+    }
+    
+    if (!price) {
+      toast.error(language === 'ar' ? "الرجاء إدخال السعر" : "Please enter price");
+      return;
+    }
+    
+    if (!description) {
+      toast.error(language === 'ar' ? "الرجاء إدخال وصف الإعلان" : "Please enter ad description");
+      return;
+    }
+    
+    if (!category) {
+      toast.error(language === 'ar' ? "الرجاء اختيار الفئة" : "Please select a category");
+      return;
+    }
+    
+    if (!location) {
+      toast.error(language === 'ar' ? "الرجاء اختيار المنطقة" : "Please select a location");
+      return;
+    }
+    
+    if (images.length === 0) {
+      toast.error(language === 'ar' ? "الرجاء إضافة صورة واحدة على الأقل" : "Please add at least one image");
       return;
     }
 
-    // Here you would typically send the data to your backend
-    toast.success("تم إضافة إعلانك بنجاح!");
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast.success(
+        language === 'ar' 
+          ? "تم إضافة إعلانك بنجاح!" 
+          : "Your ad has been added successfully!"
+      );
+      
+      // Redirect to home page
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      <div className="bg-white border-b py-4">
-        <div className="container">
-          <h1 className="text-xl font-bold">إضافة إعلان جديد</h1>
+    <div className="min-h-screen bg-background pb-20">
+      <Navbar />
+      
+      <main className="container py-4">
+        <div className="flex items-center mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mr-2" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowRight className="h-4 w-4 mr-1" />
+            <span>{language === 'ar' ? 'عودة' : 'Back'}</span>
+          </Button>
+          <h1 className="text-xl font-bold">
+            {language === 'ar' ? 'إضافة إعلان جديد' : 'Add New Listing'}
+          </h1>
         </div>
-      </div>
 
-      <div className="container py-6">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
           {/* Images Upload */}
           <div className="space-y-4">
-            <label className="block font-medium">صور المنتج</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'صور المنتج' : 'Product Images'}
+            </label>
             <div className="grid grid-cols-4 gap-4">
               {images.map((image, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
@@ -106,14 +164,18 @@ export default function Post() {
                 </label>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">يمكنك إضافة حتى 8 صور</p>
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' ? 'يمكنك إضافة حتى 8 صور' : 'You can add up to 8 images'}
+            </p>
           </div>
 
           {/* Title */}
           <div className="space-y-2">
-            <label className="block font-medium">عنوان الإعلان</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'عنوان الإعلان' : 'Listing Title'}
+            </label>
             <Input
-              placeholder="مثال: آيفون 13 برو ماكس مستعمل"
+              placeholder={language === 'ar' ? 'مثال: آيفون 13 برو ماكس مستعمل' : 'Example: Used iPhone 13 Pro Max'}
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
@@ -121,13 +183,17 @@ export default function Post() {
 
           {/* Category */}
           <div className="space-y-2">
-            <label className="block font-medium">الفئة</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'الفئة' : 'Category'}
+            </label>
             <select
               className="w-full rounded-md border border-input bg-background px-3 py-2"
               value={category}
               onChange={e => setCategory(e.target.value)}
             >
-              <option value="">اختر الفئة</option>
+              <option value="">
+                {language === 'ar' ? 'اختر الفئة' : 'Select category'}
+              </option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -136,7 +202,9 @@ export default function Post() {
 
           {/* Price */}
           <div className="space-y-2">
-            <label className="block font-medium">السعر</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'السعر' : 'Price'}
+            </label>
             <div className="relative">
               <Input
                 type="number"
@@ -146,20 +214,24 @@ export default function Post() {
                 className="pl-12"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                ل.س
+                {language === 'ar' ? 'ل.س' : 'SYP'}
               </span>
             </div>
           </div>
 
           {/* Location */}
           <div className="space-y-2">
-            <label className="block font-medium">المنطقة</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'المنطقة' : 'Location'}
+            </label>
             <select
               className="w-full rounded-md border border-input bg-background px-3 py-2"
               value={location}
               onChange={e => setLocation(e.target.value)}
             >
-              <option value="">اختر المنطقة</option>
+              <option value="">
+                {language === 'ar' ? 'اختر المنطقة' : 'Select location'}
+              </option>
               {regions.map(region => (
                 <option key={region} value={region}>{region}</option>
               ))}
@@ -168,9 +240,15 @@ export default function Post() {
 
           {/* Description */}
           <div className="space-y-2">
-            <label className="block font-medium">وصف الإعلان</label>
+            <label className="block font-medium">
+              {language === 'ar' ? 'وصف الإعلان' : 'Listing Description'}
+            </label>
             <Textarea
-              placeholder="اكتب وصفاً تفصيلياً عن المنتج..."
+              placeholder={
+                language === 'ar' 
+                  ? 'اكتب وصفاً تفصيلياً عن المنتج...' 
+                  : 'Write a detailed description about the product...'
+              }
               value={description}
               onChange={e => setDescription(e.target.value)}
               className="min-h-[150px]"
@@ -178,11 +256,22 @@ export default function Post() {
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" className="w-full" size="lg">
-            نشر الإعلان
+          <Button 
+            type="submit" 
+            className="w-full" 
+            size="lg" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting 
+              ? (language === 'ar' ? 'جاري النشر...' : 'Publishing...') 
+              : (language === 'ar' ? 'نشر الإعلان' : 'Publish Listing')}
           </Button>
         </form>
-      </div>
+      </main>
+      
+      <BottomNav />
     </div>
   );
-}
+};
+
+export default Post;

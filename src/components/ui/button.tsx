@@ -1,8 +1,9 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -37,15 +38,39 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  showFeedback?: boolean
+  feedbackMessage?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, showFeedback = false, feedbackMessage, onClick, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    const { toast } = useToast()
+    
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Add haptic feedback effect with subtle animation
+      const button = e.currentTarget;
+      button.style.transform = "scale(0.98)";
+      setTimeout(() => {
+        button.style.transform = "";
+      }, 100);
+      
+      // Show toast feedback if requested
+      if (showFeedback && feedbackMessage) {
+        toast({
+          description: feedbackMessage,
+        })
+      }
+      
+      // Call the original onClick handler if provided
+      if (onClick) onClick(e);
+    }
+    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        onClick={handleClick}
         {...props}
       />
     )
