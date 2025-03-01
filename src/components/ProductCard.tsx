@@ -1,5 +1,8 @@
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProductCardProps {
   id: string;
@@ -8,9 +11,26 @@ interface ProductCardProps {
   image: string;
   category: string;
   location: string;
+  likes?: number;
 }
 
-export function ProductCard({ id, title, price, image, category, location }: ProductCardProps) {
+export function ProductCard({ id, title, price, image, category, location, likes = 0 }: ProductCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(likes);
+  const { language } = useLanguage();
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isLiked) {
+      setLikesCount(likesCount - 1);
+    } else {
+      setLikesCount(likesCount + 1);
+    }
+    setIsLiked(!isLiked);
+  };
+
   return (
     <Link to={`/product/${id}`} className="block animate-fade-up">
       <div className="rounded-xl overflow-hidden bg-card shadow-sm card-hover h-full border">
@@ -26,16 +46,26 @@ export function ProductCard({ id, title, price, image, category, location }: Pro
               {category}
             </span>
           </div>
+          <button 
+            onClick={handleLike}
+            className="absolute top-2 left-2 p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm"
+          >
+            <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+          </button>
         </div>
         <div className="p-3">
           <h3 className="font-medium text-sm truncate">{title}</h3>
           <div className="mt-1 flex items-center justify-between">
             <span className="text-base font-semibold text-primary">
-              {price.toLocaleString()} ل.س
+              {price.toLocaleString()} {language === 'ar' ? 'ل.س' : 'SYP'}
             </span>
             <span className="text-xs text-muted-foreground">
               {location}
             </span>
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground flex items-center">
+            <Heart className="h-3 w-3 mr-1" />
+            <span>{likesCount} {language === 'ar' ? 'إعجاب' : 'likes'}</span>
           </div>
         </div>
       </div>
