@@ -19,10 +19,23 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     // تعيين اتجاه الصفحة بناءً على اللغة
     document.documentElement.setAttribute('lang', language);
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    
+    // تحديث CSS لضمان اتجاه الخط المناسب للغة
+    if (language === 'ar') {
+      document.body.classList.add('rtl');
+      document.body.classList.remove('ltr');
+    } else {
+      document.body.classList.add('ltr');
+      document.body.classList.remove('rtl');
+    }
+    
+    // تحديث العناصر التي تعتمد على اللغة
+    const event = new CustomEvent('languagechange', { detail: { language } });
+    window.dispatchEvent(event);
   }, [language]);
 
   const t = (key: keyof typeof translations.ar): string => {
-    return translations[language][key];
+    return translations[language][key] || key;
   };
 
   const translateCategory = (category: string): string => {

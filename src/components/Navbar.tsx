@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Menu, MapPin, Filter, X, Bell, Mic, Globe, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -25,10 +25,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 export function Navbar() {
+  const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [speechTranscript, setSpeechTranscript] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const { language, setLanguage, t, translateRegion } = useLanguage();
 
   const toggleLanguage = () => {
@@ -36,12 +40,68 @@ export function Navbar() {
   };
 
   const handleVoiceSearch = () => {
-    setIsListening(true);
-    // محاكاة البحث الصوتي
-    setTimeout(() => {
+    if (isListening) {
+      // If already listening, stop listening
+      window.speechSynthesis?.cancel();
       setIsListening(false);
-      // هنا سنقوم بمعالجة البحث الصوتي
-    }, 2000);
+      return;
+    }
+    
+    // Check if speech recognition is available
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      setIsListening(true);
+      setSpeechTranscript("");
+      
+      try {
+        // @ts-ignore - Start listening
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = language === 'ar' ? 'ar-SA' : 'en-US';
+        recognition.start();
+        
+        recognition.onresult = (event: any) => {
+          const transcript = Array.from(event.results)
+            .map((result: any) => result[0])
+            .map((result: any) => result.transcript)
+            .join('');
+          
+          setSpeechTranscript(transcript);
+          setSearchInput(transcript); // Update the search input with the transcript
+        };
+        
+        recognition.onend = () => {
+          setIsListening(false);
+          if (speechTranscript) {
+            // Trigger search with the transcript once speech recognition is complete
+            handleSearch(speechTranscript);
+          }
+        };
+      } catch (error) {
+        console.error('Speech recognition error', error);
+        setIsListening(false);
+        toast.error(
+          language === 'ar' 
+            ? "لم نتمكن من تشغيل ميزة البحث الصوتي" 
+            : "Couldn't start voice search feature"
+        );
+      }
+    } else {
+      toast.error(
+        language === 'ar' 
+          ? "البحث الصوتي غير مدعوم في متصفحك" 
+          : "Voice search is not supported in your browser"
+      );
+    }
+  };
+
+  const handleSearch = (term: string = searchInput) => {
+    if (!term.trim()) return;
+    
+    // Navigate to search page with the search term
+    navigate(`/search?q=${encodeURIComponent(term)}`);
+    setIsSearchOpen(false);
   };
 
   return (
@@ -161,6 +221,9 @@ export function Navbar() {
                     type="search"
                     placeholder={t('searchPlaceholder')}
                     autoFocus
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     className="w-full rounded-xl border bg-background py-3 pr-10 pl-10 text-lg"
                   />
                   <Button 
@@ -185,19 +248,37 @@ export function Navbar() {
                 {isListening && (
                   <div className="mt-4 rounded-lg bg-muted p-4 text-center">
                     <p className="text-lg">{language === 'ar' ? 'جاري الاستماع...' : 'Listening...'}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{language === 'ar' ? 'تحدث الآن' : 'Speak now'}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{speechTranscript || (language === 'ar' ? 'تحدث الآن' : 'Speak now')}</p>
                   </div>
                 )}
                 
                 <div className="mt-6">
                   <h3 className="mb-2 text-lg font-semibold">{t('popularSearches')}</h3>
                   <div className="flex flex-wrap gap-2">
-                    <button className="category-chip">{language === 'ar' ? 'آيفون' : 'iPhone'}</button>
-                    <button className="category-chip">{language === 'ar' ? 'سامسونج' : 'Samsung'}</button>
-                    <button className="category-chip">{language === 'ar' ? 'شقق للإيجار' : 'Apartments for Rent'}</button>
-                    <button className="category-chip">{language === 'ar' ? 'سيارات مستعملة' : 'Used Cars'}</button>
-                    <button className="category-chip">{language === 'ar' ? 'كمبيوتر' : 'Computer'}</button>
-                    <button className="category-chip">{language === 'ar' ? 'أثاث منزلي' : 'Home Furniture'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'آيفون' : 'iPhone');
+                      handleSearch(language === 'ar' ? 'آيفون' : 'iPhone');
+                    }}>{language === 'ar' ? 'آيفون' : 'iPhone'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'سامسونج' : 'Samsung');
+                      handleSearch(language === 'ar' ? 'سامسونج' : 'Samsung');
+                    }}>{language === 'ar' ? 'سامسونج' : 'Samsung'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'شقق للإيجار' : 'Apartments for Rent');
+                      handleSearch(language === 'ar' ? 'شقق للإيجار' : 'Apartments for Rent');
+                    }}>{language === 'ar' ? 'شقق للإيجار' : 'Apartments for Rent'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'سيارات مستعملة' : 'Used Cars');
+                      handleSearch(language === 'ar' ? 'سيارات مستعملة' : 'Used Cars');
+                    }}>{language === 'ar' ? 'سيارات مستعملة' : 'Used Cars'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'كمبيوتر' : 'Computer');
+                      handleSearch(language === 'ar' ? 'كمبيوتر' : 'Computer');
+                    }}>{language === 'ar' ? 'كمبيوتر' : 'Computer'}</button>
+                    <button className="category-chip" onClick={() => {
+                      setSearchInput(language === 'ar' ? 'أثاث منزلي' : 'Home Furniture');
+                      handleSearch(language === 'ar' ? 'أثاث منزلي' : 'Home Furniture');
+                    }}>{language === 'ar' ? 'أثاث منزلي' : 'Home Furniture'}</button>
                   </div>
                 </div>
               </div>
@@ -226,21 +307,14 @@ export function Navbar() {
                 <Globe className="h-5 w-5" />
               </Button>
 
-              <div className="relative hidden md:block md:w-64">
-                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="search"
-                  placeholder={t('searchPlaceholder')}
-                  className="w-full rounded-full border bg-background pr-10 pl-10 py-2 text-sm"
-                  onClick={() => setIsSearchOpen(true)}
-                />
+              <div className="hidden md:block md:w-64 mr-2">
                 <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute left-1 top-1/2 -translate-y-1/2"
-                  onClick={handleVoiceSearch}
+                  variant="outline" 
+                  className="w-full flex items-center justify-center"
+                  onClick={() => setIsSearchOpen(true)}
                 >
-                  <Mic className="h-4 w-4" />
+                  <Search className="h-4 w-4 ml-2" />
+                  <span>{t('search')}</span>
                 </Button>
               </div>
 
@@ -267,10 +341,18 @@ export function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem>{language === 'ar' ? 'السعر: من الأعلى إلى الأقل' : 'Price: High to Low'}</DropdownMenuItem>
-                  <DropdownMenuItem>{language === 'ar' ? 'السعر: من الأقل إلى الأعلى' : 'Price: Low to High'}</DropdownMenuItem>
-                  <DropdownMenuItem>{language === 'ar' ? 'الأحدث' : 'Newest'}</DropdownMenuItem>
-                  <DropdownMenuItem>{language === 'ar' ? 'الأقرب إليك' : 'Nearest to You'}</DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/search?sort=price-high">{language === 'ar' ? 'السعر: من الأعلى إلى الأقل' : 'Price: High to Low'}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/search?sort=price-low">{language === 'ar' ? 'السعر: من الأقل إلى الأعلى' : 'Price: Low to High'}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/search?sort=newest">{language === 'ar' ? 'الأحدث' : 'Newest'}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/search?sort=nearest">{language === 'ar' ? 'الأقرب إليك' : 'Nearest to You'}</Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

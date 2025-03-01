@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ProductCard } from "@/components/ProductCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // بيانات مثالية للمنتجات المميزة
 const featuredProducts = [
@@ -74,11 +75,23 @@ const recentSearches = [
 
 const Search = () => {
   const { language, t } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [speechTranscript, setSpeechTranscript] = useState("");
   const [searchResults, setSearchResults] = useState<typeof featuredProducts>([]);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Parse search query from URL if present
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const query = searchParams.get('q');
+    if (query) {
+      setSearchTerm(query);
+      handleSearch(query);
+    }
+  }, [location.search]);
 
   // Speech recognition setup
   useEffect(() => {
@@ -100,11 +113,8 @@ const Search = () => {
           .join('');
         
         setSpeechTranscript(transcript);
-        
-        // Update search term when speech recognition is done
-        if (event.results[0].isFinal) {
-          setSearchTerm(transcript);
-        }
+        // Update search term immediately when speech recognition provides a result
+        setSearchTerm(transcript);
       };
       
       recognition.onend = () => {
@@ -131,7 +141,7 @@ const Search = () => {
         recognition.abort();
       }
     };
-  }, [language]);
+  }, [language, speechTranscript]);
 
   const handleSearch = (term: string = searchTerm) => {
     if (!term.trim()) return;
@@ -145,6 +155,9 @@ const Search = () => {
     
     setSearchResults(results);
     setHasSearched(true);
+    
+    // Update URL with search term
+    navigate(`/search?q=${encodeURIComponent(term)}`, { replace: true });
     
     // Add to recent searches (in a real app, save to localStorage or backend)
     console.log(`Adding "${term}" to recent searches`);
@@ -180,7 +193,7 @@ const Search = () => {
             .join('');
           
           setSpeechTranscript(transcript);
-          setSearchTerm(transcript);
+          setSearchTerm(transcript); // Update search box immediately with transcript
         };
         
         recognition.onend = () => {
@@ -212,6 +225,7 @@ const Search = () => {
     setSpeechTranscript("");
     setSearchResults([]);
     setHasSearched(false);
+    navigate('/search', { replace: true });
   };
 
   const searchPlaceholder = language === 'ar' ? "ابحث عن منتجات..." : "Search for products...";
@@ -248,13 +262,15 @@ const Search = () => {
             <Button 
               className={`h-12 w-12 rounded-full ${isListening ? 'animate-pulse bg-red-500 hover:bg-red-600' : ''}`}
               onClick={handleMicSearch}
+              showFeedback={!isListening}
+              feedbackMessage={language === 'ar' ? "انقر واتحدث للبحث الصوتي" : "Tap and speak for voice search"}
             >
               <Mic className="h-5 w-5" />
             </Button>
           </div>
           
           {isListening && (
-            <div className="absolute top-16 left-0 right-0 bg-background border rounded-lg p-4 text-center shadow-lg">
+            <div className="absolute top-16 left-0 right-0 bg-background border rounded-lg p-4 text-center shadow-lg z-10">
               <p className="text-lg">
                 {language === 'ar' ? 'جاري الاستماع...' : 'Listening...'}
               </p>
@@ -312,7 +328,12 @@ const Search = () => {
                   <h3 className="text-lg font-semibold">
                     {language === 'ar' ? 'عمليات البحث الأخيرة' : 'Recent Searches'}
                   </h3>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    showFeedback
+                    feedbackMessage={language === 'ar' ? "تم مسح عمليات البحث الأخيرة" : "Recent searches cleared"}
+                  >
                     {language === 'ar' ? 'مسح' : 'Clear'}
                   </Button>
                 </div>

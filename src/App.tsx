@@ -15,6 +15,8 @@ import Category from "./pages/Category";
 import Region from "./pages/Region";
 import Search from "./pages/Search";
 import ProductDetail from "./pages/ProductDetail";
+import Featured from "./pages/Featured";
+import Latest from "./pages/Latest";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/region/:regionName" element={<Region />} />
             <Route path="/search" element={<Search />} />
             <Route path="/product/:productId" element={<ProductDetail />} />
+            <Route path="/featured" element={<Featured />} />
+            <Route path="/latest" element={<Latest />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
