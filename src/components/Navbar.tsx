@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Menu, MapPin, Filter, X, Bell, Mic, Globe, Facebook, Instagram, Twitter, YouTube } from "lucide-react";
+import { Search, Menu, MapPin, Filter, X, Bell, Mic, Globe, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -33,6 +33,11 @@ export function Navbar() {
   const toggleLanguage = () => {
     setCurrentLanguage(currentLanguage === 'ar' ? 'en' : 'ar');
     // في التطبيق الحقيقي، هنا سنقوم بتغيير اللغة عبر مكتبة i18n
+    if (currentLanguage === 'ar') {
+      document.documentElement.setAttribute('lang', 'en');
+    } else {
+      document.documentElement.setAttribute('lang', 'ar');
+    }
   };
 
   const handleVoiceSearch = () => {
@@ -57,7 +62,7 @@ export function Navbar() {
             <SheetContent side="right" className="w-[80%] sm:w-[350px]">
               <SheetHeader className="text-right">
                 <SheetTitle className="text-xl font-bold flex items-center justify-end">
-                  <img src="/lovable-uploads/3919b86a-5f8e-4952-a304-aa5d961cfd10.png" 
+                  <img src="/lovable-uploads/9c7d94b9-c841-4c9a-bb51-db6df6b25b36.png" 
                        alt="منتجك" 
                        className="h-8 ml-2" />
                   <span className="text-primary">منتجك</span>
@@ -130,7 +135,7 @@ export function Navbar() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <a href="https://youtube.com/montajak" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary">
-                          <YouTube className="h-6 w-6" />
+                          <Youtube className="h-6 w-6" />
                         </a>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -143,9 +148,11 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
           
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <img src="/lovable-uploads/3919b86a-5f8e-4952-a304-aa5d961cfd10.png" alt="منتجك" className="h-8" />
-            منتجك
+          <Link to="/" className="flex items-center gap-2 text-xl font-bold">
+            <img src="/lovable-uploads/9c7d94b9-c841-4c9a-bb51-db6df6b25b36.png" 
+                alt="منتجك" 
+                className="h-8 w-auto" />
+            <span className="logo-text">منتجك</span>
           </Link>
         </div>
         
@@ -219,6 +226,7 @@ export function Navbar() {
                 size="icon" 
                 onClick={toggleLanguage} 
                 title={currentLanguage === 'ar' ? 'English' : 'العربية'}
+                className="btn-hover-effect"
               >
                 <Globe className="h-5 w-5" />
               </Button>
@@ -268,6 +276,39 @@ export function Navbar() {
                   <DropdownMenuItem>السعر: من الأقل إلى الأعلى</DropdownMenuItem>
                   <DropdownMenuItem>الأحدث</DropdownMenuItem>
                   <DropdownMenuItem>الأقرب إليك</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="hidden md:flex items-center">
+                    <span>تواصل معنا</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem className="flex items-center">
+                    <span className="flex-1">البريد الإلكتروني:</span>
+                    <span className="text-primary font-medium">mntgk.sy@gmail.com</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="https://instagram.com/montajak" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                      <Instagram className="h-4 w-4 ml-2" />
+                      <span>انستجرام</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="https://facebook.com/montajak" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                      <Facebook className="h-4 w-4 ml-2" />
+                      <span>فيسبوك</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="https://twitter.com/montajak" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                      <Twitter className="h-4 w-4 ml-2" />
+                      <span>تويتر</span>
+                    </a>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

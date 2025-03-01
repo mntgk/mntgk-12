@@ -167,3 +167,46 @@ html[lang="en"] .space-x-reverse > * + * {
   margin-right: 0;
   margin-left: calc(0.5rem * var(--tw-space-x-reverse));
 }
+
+/* تأثيرات الشعار */
+.app-logo {
+  transition: transform 0.3s ease;
+}
+
+.app-logo:hover {
+  transform: scale(1.05);
+}
+
+/* تأثيرات متحركة */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* تأثيرات تبديل اللغة */
+.language-switch-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.language-switch-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.language-switch-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.language-switch-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 300ms, transform 300ms;
+}
