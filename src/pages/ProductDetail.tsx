@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { 
   Heart, Share2, Flag, MapPin, MessageCircle, 
-  Phone, WhatsApp, Star, ChevronLeft
+  Phone, MessageSquare, Star, ChevronLeft
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
@@ -233,16 +233,16 @@ const ProductDetail = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <Button className="bg-green-600 hover:bg-green-700">
-                <WhatsApp className="ml-2 h-5 w-5" />
-                <span>واتساب</span>
+                <MessageSquare className="ml-2 h-5 w-5" />
+                <span>{language === 'ar' ? 'واتساب' : 'WhatsApp'}</span>
               </Button>
               <Button>
                 <Phone className="ml-2 h-5 w-5" />
-                <span>اتصال</span>
+                <span>{language === 'ar' ? 'اتصال' : 'Call'}</span>
               </Button>
               <Button variant="outline" className="col-span-2">
                 <MessageCircle className="ml-2 h-5 w-5" />
-                <span>رسالة</span>
+                <span>{language === 'ar' ? 'رسالة' : 'Message'}</span>
               </Button>
             </div>
             
@@ -295,12 +295,12 @@ const ProductDetail = () => {
           <DialogHeader>
             <DialogTitle>{t('share')}</DialogTitle>
             <DialogDescription>
-              شارك هذا المنتج مع أصدقائك
+              {language === 'ar' ? 'شارك هذا المنتج مع أصدقائك' : 'Share this product with your friends'}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center space-x-4 space-x-reverse py-4">
             <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
-              <WhatsApp className="h-6 w-6 text-green-600" />
+              <MessageSquare className="h-6 w-6 text-green-600" />
             </Button>
             <Button variant="outline" size="icon" className="rounded-full w-12 h-12">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-blue-600">
