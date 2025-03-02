@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { X, Camera, Upload } from "lucide-react";
 
 const Post = () => {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("SYP");
   const [description, setDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("");
@@ -23,6 +26,11 @@ const Post = () => {
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [productId, setProductId] = useState<string | null>(null);
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { language } = useLanguage();
   const { user, isAuthenticated } = useAuth();
   
@@ -35,6 +43,30 @@ const Post = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate, language]);
+
+  // If productId is set, load product data for editing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('edit');
+    if (id) {
+      setProductId(id);
+      
+      // Get products from localStorage
+      const products = JSON.parse(localStorage.getItem('montajak_products') || '[]');
+      const product = products.find((p: any) => p.id === id && p.userId === user?.id);
+      
+      if (product) {
+        setTitle(product.title);
+        setPrice(product.price.toString());
+        setCurrency(product.currency || 'SYP');
+        setDescription(product.description);
+        setSelectedCategory(product.category);
+        setSelectedRegion(product.region);
+        setCondition(product.condition);
+        setImages(product.images || []);
+      }
+    }
+  }, [user?.id]);
 
   const categories = [
     { value: "vehicles", label: language === 'ar' ? 'سيارات' : 'Vehicles' },
@@ -52,20 +84,51 @@ const Post = () => {
     { value: "homs", label: language === 'ar' ? 'حمص' : 'Homs' },
     { value: "latakia", label: language === 'ar' ? 'اللاذقية' : 'Latakia' },
     { value: "tartus", label: language === 'ar' ? 'طرطوس' : 'Tartus' },
+    { value: "idlib", label: language === 'ar' ? 'إدلب' : 'Idlib' },
+    { value: "hama", label: language === 'ar' ? 'حماة' : 'Hama' },
+    { value: "daraa", label: language === 'ar' ? 'درعا' : 'Daraa' },
+    { value: "deir-ez-zor", label: language === 'ar' ? 'دير الزور' : 'Deir ez-Zor' },
+    { value: "raqqa", label: language === 'ar' ? 'الرقة' : 'Raqqa' },
     { value: "other", label: language === 'ar' ? 'أخرى' : 'Other' },
   ];
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const currencies = [
+    { value: "SYP", label: language === 'ar' ? 'ليرة سورية' : 'Syrian Pound' },
+    { value: "TRY", label: language === 'ar' ? 'ليرة تركية' : 'Turkish Lira' },
+    { value: "USD", label: language === 'ar' ? 'دولار أمريكي' : 'US Dollar' },
+  ];
 
-    // For demo purposes, we'll use placeholder URLs
-    const newImages = Array.from(files).map(
-      (_, index) => `https://source.unsplash.com/random/300x300?product&sig=${Date.now() + index}`
-    );
+  const openImageDialog = () => {
+    setIsImageDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    setImages((prev) => [...prev, ...newImages]);
-    toast.success(language === 'ar' ? 'تم إضافة الصور' : 'Images added successfully');
+    const file = files[0];
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setPreviewImage(e.target.result.toString());
+      }
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
+  const addImage = () => {
+    if (previewImage) {
+      setImages((prev) => [...prev, previewImage]);
+      setPreviewImage(null);
+      setIsImageDialogOpen(false);
+      
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const removeImage = (index: number) => {
@@ -87,45 +150,74 @@ const Post = () => {
       ? images 
       : [`https://source.unsplash.com/random/300x300?product&sig=${Date.now()}`];
 
-    // Create a new product object
-    const newProduct = {
-      id: Math.random().toString(36).substr(2, 9),
-      title,
-      price: Number(price),
-      description,
-      category: selectedCategory,
-      region: selectedRegion,
-      condition,
-      images: productImages,
-      userId: user?.id,
-      userName: user?.name,
-      userAvatar: user?.avatar,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      views: 0,
-    };
+    // Create or update product
+    let product;
+    
+    if (productId) {
+      // Update existing product
+      const products = JSON.parse(localStorage.getItem('montajak_products') || '[]');
+      const updatedProducts = products.map((p: any) => {
+        if (p.id === productId && p.userId === user?.id) {
+          return {
+            ...p,
+            title,
+            price: Number(price),
+            currency,
+            description,
+            category: selectedCategory,
+            region: selectedRegion,
+            condition,
+            images: productImages,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return p;
+      });
+      
+      localStorage.setItem('montajak_products', JSON.stringify(updatedProducts));
+      product = updatedProducts.find((p: any) => p.id === productId);
+      
+    } else {
+      // Create a new product
+      product = {
+        id: Math.random().toString(36).substr(2, 9),
+        title,
+        price: Number(price),
+        currency,
+        description,
+        category: selectedCategory,
+        region: selectedRegion,
+        condition,
+        images: productImages,
+        userId: user?.id,
+        userName: user?.name,
+        userAvatar: user?.avatar,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        views: 0,
+      };
 
-    // Simulate API call - in a real app, this would send data to a backend
-    setTimeout(() => {
-      // Get existing products from localStorage or initialize empty array
+      // Get existing products or initialize an empty array
       const existingProducts = JSON.parse(localStorage.getItem('montajak_products') || '[]');
       
       // Add new product to array
-      existingProducts.push(newProduct);
+      existingProducts.push(product);
       
       // Save updated products array back to localStorage
       localStorage.setItem('montajak_products', JSON.stringify(existingProducts));
-      
+    }
+    
+    setTimeout(() => {
       setIsLoading(false);
       toast.success(
-        language === 'ar' 
-          ? 'تم نشر الإعلان بنجاح' 
-          : 'Ad posted successfully'
+        productId
+          ? (language === 'ar' ? 'تم تحديث الإعلان بنجاح' : 'Ad updated successfully')
+          : (language === 'ar' ? 'تم نشر الإعلان بنجاح' : 'Ad posted successfully')
       );
       
-      // Redirect to home page after successful post
-      navigate('/');
-    }, 1500);
+      // Redirect to product detail page
+      navigate(`/product/${product.id}`);
+    }, 1000);
   };
 
   return (
@@ -135,7 +227,10 @@ const Post = () => {
       <main className="container py-4">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-6">
-            {language === 'ar' ? 'نشر إعلان جديد' : 'Post a New Ad'}
+            {productId 
+              ? (language === 'ar' ? 'تعديل الإعلان' : 'Edit Ad')
+              : (language === 'ar' ? 'نشر إعلان جديد' : 'Post a New Ad')
+            }
           </h1>
           {error && <div className="text-red-500 mb-4">{error}</div>}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,16 +244,35 @@ const Post = () => {
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
-            <div>
-              <Label htmlFor="price">{language === 'ar' ? 'السعر' : 'Price'}</Label>
-              <Input
-                type="number"
-                id="price"
-                placeholder={language === 'ar' ? 'أدخل السعر بالليرة السورية' : 'Enter price in SYP'}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">{language === 'ar' ? 'السعر' : 'Price'}</Label>
+                <Input
+                  type="number"
+                  id="price"
+                  placeholder={language === 'ar' ? 'أدخل السعر' : 'Enter price'}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="currency">{language === 'ar' ? 'العملة' : 'Currency'}</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر العملة' : 'Select currency'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((curr) => (
+                      <SelectItem key={curr.value} value={curr.value}>
+                        {curr.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            
             <div>
               <Label htmlFor="description">{language === 'ar' ? 'الوصف' : 'Description'}</Label>
               <Textarea
@@ -171,7 +285,7 @@ const Post = () => {
             </div>
             <div>
               <Label>{language === 'ar' ? 'الحالة' : 'Condition'}</Label>
-              <RadioGroup defaultValue="new" className="flex gap-4" onValueChange={setCondition}>
+              <RadioGroup defaultValue={condition} className="flex gap-4" onValueChange={setCondition}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="new" id="r1" />
                   <Label htmlFor="r1">{language === 'ar' ? 'جديد' : 'New'}</Label>
@@ -185,38 +299,39 @@ const Post = () => {
             
             {/* Images Upload */}
             <div>
-              <Label htmlFor="images">{language === 'ar' ? 'صور الإعلان' : 'Ad Images'}</Label>
+              <Label>{language === 'ar' ? 'صور الإعلان' : 'Ad Images'}</Label>
               <div className="mt-2">
-                <Input
-                  id="images"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                  className="mb-2"
-                />
-                {images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {images.map((img, index) => (
-                      <div key={index} className="relative">
-                        <img src={img} alt="product" className="w-full h-24 object-cover rounded" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {images.map((img, index) => (
+                    <div key={index} className="relative w-24 h-24 border rounded overflow-hidden">
+                      <img src={img} alt="product" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  <button 
+                    type="button"
+                    onClick={openImageDialog}
+                    className="w-24 h-24 border-2 border-dashed border-muted-foreground/25 rounded flex flex-col items-center justify-center gap-1 hover:bg-muted/50 transition-colors"
+                  >
+                    <Camera className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'إضافة صورة' : 'Add Image'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             
             <div>
               <Label htmlFor="category">{language === 'ar' ? 'الفئة' : 'Category'}</Label>
-              <Select onValueChange={setSelectedCategory}>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={language === 'ar' ? 'اختر فئة' : 'Select a category'} />
                 </SelectTrigger>
@@ -231,7 +346,7 @@ const Post = () => {
             </div>
             <div>
               <Label htmlFor="region">{language === 'ar' ? 'المنطقة' : 'Region'}</Label>
-              <Select onValueChange={setSelectedRegion}>
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={language === 'ar' ? 'اختر منطقة' : 'Select a region'} />
                 </SelectTrigger>
@@ -249,13 +364,81 @@ const Post = () => {
                 ? language === 'ar'
                   ? 'جارٍ النشر...'
                   : 'Posting...'
-                : language === 'ar'
-                  ? 'نشر الإعلان'
-                  : 'Post Ad'}
+                : productId
+                  ? language === 'ar'
+                    ? 'تحديث الإعلان'
+                    : 'Update Ad'
+                  : language === 'ar'
+                    ? 'نشر الإعلان'
+                    : 'Post Ad'}
             </Button>
           </form>
         </div>
       </main>
+
+      <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>
+            {language === 'ar' ? 'إضافة صورة' : 'Add Image'}
+          </DialogTitle>
+          
+          <div className="space-y-4">
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 h-48">
+              {previewImage ? (
+                <div className="relative w-full h-full">
+                  <img 
+                    src={previewImage} 
+                    alt="Preview" 
+                    className="w-full h-full object-contain rounded"
+                  />
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setPreviewImage(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="mt-2">
+                    <label 
+                      htmlFor="product-image" 
+                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                      {language === 'ar' ? 'اختر صورة' : 'Choose Image'}
+                    </label>
+                    <input 
+                      id="product-image" 
+                      ref={fileInputRef}
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {language === 'ar' ? 'PNG، JPG حتى 10MB' : 'PNG, JPG up to 10MB'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImageDialogOpen(false)}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button 
+              onClick={addImage} 
+              disabled={!previewImage}
+            >
+              {language === 'ar' ? 'إضافة' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>

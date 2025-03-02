@@ -12,7 +12,7 @@ import { toast } from "sonner";
 const Login = () => {
   const navigate = useNavigate();
   const { login, register, isAuthenticated } = useAuth();
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -48,11 +48,16 @@ const Login = () => {
     }
     
     setIsLoggingIn(true);
-    const success = await login(loginEmail, loginPassword);
-    setIsLoggingIn(false);
-    
-    if (success) {
-      navigate('/');
+    try {
+      const success = await login(loginEmail, loginPassword);
+      if (success) {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during login');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -77,12 +82,17 @@ const Login = () => {
     }
     
     setIsRegistering(true);
-    const success = await register(registerName, registerEmail, registerPassword, registerPhone);
-    setIsRegistering(false);
-    
-    if (success) {
-      toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
-      navigate('/');
+    try {
+      const success = await register(registerName, registerEmail, registerPassword, registerPhone);
+      if (success) {
+        toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء إنشاء الحساب' : 'An error occurred during registration');
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -93,9 +103,18 @@ const Login = () => {
       return;
     }
     
+    // Check if email exists
+    const users = JSON.parse(localStorage.getItem('montajak_users') || '[]');
+    const userExists = users.some((user: any) => user.email === resetEmail);
+    
+    if (!userExists) {
+      toast.error(language === 'ar' ? 'البريد الإلكتروني غير مسجل' : 'Email not registered');
+      return;
+    }
+    
     setIsResetting(true);
     
-    // Simulate password reset
+    // Simulate password reset (In a real app, this would send an email)
     setTimeout(() => {
       setIsResetting(false);
       toast.success(

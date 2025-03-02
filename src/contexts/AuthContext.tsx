@@ -20,7 +20,7 @@ type AuthContextType = {
   register: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => void;
-  updateAvatar: (imageUrl: string) => void;
+  updateAvatar: (imageFile: File) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,10 +73,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // قراءة قائمة المستخدمين من التخزين المحلي
       const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
       
+      // طباعة المستخدمين وبيانات الدخول للتصحيح
+      console.log('Trying to login with:', { emailOrPhone, password });
+      console.log('Available users:', users);
+      
       // البحث عن المستخدم بواسطة البريد الإلكتروني أو رقم الهاتف وكلمة المرور
       const foundUser = users.find((u: any) => 
         (u.email === emailOrPhone || u.phone === emailOrPhone) && u.password === password
       );
+      
+      console.log('Found user:', foundUser);
       
       if (foundUser) {
         // لا نريد تخزين كلمة المرور في حالة المستخدم
@@ -86,15 +92,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAuthenticated(true);
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
         
-        toast.success('تم تسجيل الدخول بنجاح');
+        toast.success(
+          'تم تسجيل الدخول بنجاح'
+        );
         return true;
       } else {
-        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        toast.error(
+          'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+        );
         return false;
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('حدث خطأ أثناء تسجيل الدخول');
+      toast.error(
+        'حدث خطأ أثناء تسجيل الدخول'
+      );
       return false;
     }
   };
@@ -104,12 +116,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // محاكاة طلب API
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // التحقق من وجود البريد الإلكتروني مسبقًا
+      // قراءة قائمة المستخدمين من التخزين المحلي
       const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+      
+      // التحقق من وجود البريد الإلكتروني مسبقًا
       const existingUser = users.find((u: any) => u.email === email);
       
       if (existingUser) {
-        toast.error('البريد الإلكتروني مسجل مسبقًا');
+        toast.error(
+          'البريد الإلكتروني مسجل مسبقًا'
+        );
         return false;
       }
 
@@ -126,6 +142,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`
       };
 
+      // طباعة المستخدم الجديد للتصحيح
+      console.log('Creating new user:', newUser);
+
       // إضافة المستخدم لقائمة المستخدمين
       users.push(newUser);
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
@@ -137,11 +156,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsAuthenticated(true);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
       
-      toast.success('تم إنشاء الحساب بنجاح');
+      toast.success(
+        'تم إنشاء الحساب بنجاح'
+      );
       return true;
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error('حدث خطأ أثناء إنشاء الحساب');
+      toast.error(
+        'حدث خطأ أثناء إنشاء الحساب'
+      );
       return false;
     }
   };
@@ -170,8 +193,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateAvatar = (imageUrl: string) => {
-    if (user) {
+  const updateAvatar = async (imageFile: File): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      // تحويل الصورة إلى base64
+      const imageUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+      
       const updatedUser = { ...user, avatar: imageUrl };
       setUser(updatedUser);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
@@ -184,6 +217,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
       
       toast.success('تم تحديث الصورة الشخصية بنجاح');
+      return true;
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast.error('حدث خطأ أثناء تحديث الصورة الشخصية');
+      return false;
     }
   };
 

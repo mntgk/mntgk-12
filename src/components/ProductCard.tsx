@@ -10,18 +10,34 @@ interface ProductCardProps {
   id: string;
   title: string;
   price: number;
+  currency?: string;
   image: string;
   category: string;
   location: string;
   likes?: number;
 }
 
-export function ProductCard({ id, title, price, image, category, location, likes = 0 }: ProductCardProps) {
+export function ProductCard({ 
+  id, 
+  title, 
+  price, 
+  currency = "SYP", 
+  image, 
+  category, 
+  location, 
+  likes = 0 
+}: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(likes);
   const [isSaved, setIsSaved] = useState(false);
   const { language } = useLanguage();
   const { isAuthenticated, user } = useAuth();
+  
+  const currencySymbol = {
+    SYP: language === 'ar' ? 'ل.س' : 'SYP',
+    USD: language === 'ar' ? 'دولار' : 'USD',
+    TRY: language === 'ar' ? 'ل.ت' : 'TRY'
+  }[currency] || 'SYP';
   
   // Check if product is saved in favorites
   useEffect(() => {
@@ -129,7 +145,7 @@ export function ProductCard({ id, title, price, image, category, location, likes
           <h3 className="font-medium text-sm truncate">{title}</h3>
           <div className="mt-1 flex items-center justify-between">
             <span className="text-base font-semibold text-primary">
-              {price.toLocaleString()} {language === 'ar' ? 'ل.س' : 'SYP'}
+              {price.toLocaleString()} {currencySymbol}
             </span>
             <span className="text-xs text-muted-foreground">
               {location}
