@@ -1,8 +1,9 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, Bookmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   id: string;
@@ -17,6 +18,7 @@ interface ProductCardProps {
 export function ProductCard({ id, title, price, image, category, location, likes = 0 }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(likes);
+  const [isSaved, setIsSaved] = useState(false);
   const { language } = useLanguage();
 
   const handleLike = (e: React.MouseEvent) => {
@@ -25,10 +27,24 @@ export function ProductCard({ id, title, price, image, category, location, likes
     
     if (isLiked) {
       setLikesCount(likesCount - 1);
+      toast.success(language === 'ar' ? 'تم إلغاء الإعجاب' : 'Like removed');
     } else {
       setLikesCount(likesCount + 1);
+      toast.success(language === 'ar' ? 'تم الإعجاب' : 'Liked successfully');
     }
     setIsLiked(!isLiked);
+  };
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsSaved(!isSaved);
+    if (!isSaved) {
+      toast.success(language === 'ar' ? 'تم حفظ المنتج في المفضلة' : 'Saved to favorites');
+    } else {
+      toast.success(language === 'ar' ? 'تم إزالة المنتج من المفضلة' : 'Removed from favorites');
+    }
   };
 
   return (
@@ -46,12 +62,20 @@ export function ProductCard({ id, title, price, image, category, location, likes
               {category}
             </span>
           </div>
-          <button 
-            onClick={handleLike}
-            className="absolute top-2 left-2 p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm"
-          >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-          </button>
+          <div className="absolute top-2 left-2 flex gap-1">
+            <button 
+              onClick={handleLike}
+              className="p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm"
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+            </button>
+            <button 
+              onClick={handleSave}
+              className="p-1.5 bg-white/80 dark:bg-black/50 rounded-full backdrop-blur-sm"
+            >
+              <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-primary text-primary' : ''}`} />
+            </button>
+          </div>
         </div>
         <div className="p-3">
           <h3 className="font-medium text-sm truncate">{title}</h3>

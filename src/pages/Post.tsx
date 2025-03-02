@@ -1,274 +1,167 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ImagePlus, X, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
-import { useLanguage } from "@/contexts/LanguageContext";
-
-const categories = [
-  "سيارات ومركبات",
-  "عقارات",
-  "تقنية",
-  "خدمات",
-  "أثاث",
-  "ملابس",
-  "أجهزة منزلية",
-  "أخرى"
-];
-
-const regions = [
-  "دمشق",
-  "حلب",
-  "حمص",
-  "حماه",
-  "اللاذقية",
-  "طرطوس",
-  "درعا",
-  "السويداء",
-  "القنيطرة",
-  "الرقة",
-  "دير الزور",
-  "الحسكة",
-  "إدلب",
-  "ريف دمشق"
-];
 
 const Post = () => {
-  const navigate = useNavigate();
-  const { language } = useLanguage();
-  const [images, setImages] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [condition, setCondition] = useState("new");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { language } = useLanguage();
+  
+  const navigate = useNavigate();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const categories = [
+    { value: "vehicles", label: language === 'ar' ? 'سيارات' : 'Vehicles' },
+    { value: "real-estate", label: language === 'ar' ? 'عقارات' : 'Real Estate' },
+    { value: "technology", label: language === 'ar' ? 'تقنية' : 'Technology' },
+    { value: "furniture", label: language === 'ar' ? 'أثاث' : 'Furniture' },
+    { value: "clothes", label: language === 'ar' ? 'ملابس' : 'Clothes' },
+    { value: "services", label: language === 'ar' ? 'خدمات' : 'Services' },
+  ];
 
-    // Convert Files to URLs for preview
-    const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-    setImages(prev => [...prev, ...newImages]);
-  };
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-  };
+  const regions = [
+    { value: "damascus", label: language === 'ar' ? 'دمشق' : 'Damascus' },
+    { value: "aleppo", label: language === 'ar' ? 'حلب' : 'Aleppo' },
+    { value: "homs", label: language === 'ar' ? 'حمص' : 'Homs' },
+    { value: "latakia", label: language === 'ar' ? 'اللاذقية' : 'Latakia' },
+    { value: "tartus", label: language === 'ar' ? 'طرطوس' : 'Tartus' },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title) {
-      toast.error(language === 'ar' ? "الرجاء إدخال عنوان الإعلان" : "Please enter ad title");
-      return;
-    }
-    
-    if (!price) {
-      toast.error(language === 'ar' ? "الرجاء إدخال السعر" : "Please enter price");
-      return;
-    }
-    
-    if (!description) {
-      toast.error(language === 'ar' ? "الرجاء إدخال وصف الإعلان" : "Please enter ad description");
-      return;
-    }
-    
-    if (!category) {
-      toast.error(language === 'ar' ? "الرجاء اختيار الفئة" : "Please select a category");
-      return;
-    }
-    
-    if (!location) {
-      toast.error(language === 'ar' ? "الرجاء اختيار المنطقة" : "Please select a location");
-      return;
-    }
-    
-    if (images.length === 0) {
-      toast.error(language === 'ar' ? "الرجاء إضافة صورة واحدة على الأقل" : "Please add at least one image");
+    // Validation
+    if (!title || !price || !selectedCategory || !selectedRegion || !description) {
+      setError(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
       return;
     }
 
-    setIsSubmitting(true);
-    
+    setIsLoading(true);
+
     // Simulate API call
     setTimeout(() => {
+      setIsLoading(false);
       toast.success(
         language === 'ar' 
-          ? "تم إضافة إعلانك بنجاح!" 
-          : "Your ad has been added successfully!"
+          ? 'تم نشر الإعلان بنجاح' 
+          : 'Ad posted successfully'
       );
       
-      // Redirect to home page
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      // Redirect to home page after successful post
+      navigate('/');
     }, 1500);
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Navbar />
-      
+
       <main className="container py-4">
-        <div className="flex items-center mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mr-2" 
-            onClick={() => navigate(-1)}
-          >
-            <ArrowRight className="h-4 w-4 mr-1" />
-            <span>{language === 'ar' ? 'عودة' : 'Back'}</span>
-          </Button>
-          <h1 className="text-xl font-bold">
-            {language === 'ar' ? 'إضافة إعلان جديد' : 'Add New Listing'}
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6">
+            {language === 'ar' ? 'نشر إعلان جديد' : 'Post a New Ad'}
           </h1>
-        </div>
-
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-          {/* Images Upload */}
-          <div className="space-y-4">
-            <label className="block font-medium">
-              {language === 'ar' ? 'صور المنتج' : 'Product Images'}
-            </label>
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                  <img src={image} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 left-1 p-1 bg-white/80 rounded-full hover:bg-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {images.length < 8 && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-200 hover:border-primary transition-colors cursor-pointer flex items-center justify-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                  <ImagePlus className="w-8 h-8 text-gray-400" />
-                </label>
-              )}
+          {error && <div className="text-red-500 mb-4">{error}</div>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="title">{language === 'ar' ? 'عنوان الإعلان' : 'Ad Title'}</Label>
+              <Input
+                type="text"
+                id="title"
+                placeholder={language === 'ar' ? 'مثال: أيفون 14 برو للبيع' : 'e.g., iPhone 14 Pro for sale'}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
-            <p className="text-sm text-muted-foreground">
-              {language === 'ar' ? 'يمكنك إضافة حتى 8 صور' : 'You can add up to 8 images'}
-            </p>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-2">
-            <label className="block font-medium">
-              {language === 'ar' ? 'عنوان الإعلان' : 'Listing Title'}
-            </label>
-            <Input
-              placeholder={language === 'ar' ? 'مثال: آيفون 13 برو ماكس مستعمل' : 'Example: Used iPhone 13 Pro Max'}
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-            />
-          </div>
-
-          {/* Category */}
-          <div className="space-y-2">
-            <label className="block font-medium">
-              {language === 'ar' ? 'الفئة' : 'Category'}
-            </label>
-            <select
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-            >
-              <option value="">
-                {language === 'ar' ? 'اختر الفئة' : 'Select category'}
-              </option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Price */}
-          <div className="space-y-2">
-            <label className="block font-medium">
-              {language === 'ar' ? 'السعر' : 'Price'}
-            </label>
-            <div className="relative">
+            <div>
+              <Label htmlFor="price">{language === 'ar' ? 'السعر' : 'Price'}</Label>
               <Input
                 type="number"
-                placeholder="0"
+                id="price"
+                placeholder={language === 'ar' ? 'أدخل السعر بالليرة السورية' : 'Enter price in SYP'}
                 value={price}
-                onChange={e => setPrice(e.target.value)}
-                className="pl-12"
+                onChange={(e) => setPrice(e.target.value)}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                {language === 'ar' ? 'ل.س' : 'SYP'}
-              </span>
             </div>
-          </div>
-
-          {/* Location */}
-          <div className="space-y-2">
-            <label className="block font-medium">
-              {language === 'ar' ? 'المنطقة' : 'Location'}
-            </label>
-            <select
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-            >
-              <option value="">
-                {language === 'ar' ? 'اختر المنطقة' : 'Select location'}
-              </option>
-              {regions.map(region => (
-                <option key={region} value={region}>{region}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <label className="block font-medium">
-              {language === 'ar' ? 'وصف الإعلان' : 'Listing Description'}
-            </label>
-            <Textarea
-              placeholder={
-                language === 'ar' 
-                  ? 'اكتب وصفاً تفصيلياً عن المنتج...' 
-                  : 'Write a detailed description about the product...'
-              }
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="min-h-[150px]"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button 
-            type="submit" 
-            className="w-full" 
-            size="lg" 
-            disabled={isSubmitting}
-          >
-            {isSubmitting 
-              ? (language === 'ar' ? 'جاري النشر...' : 'Publishing...') 
-              : (language === 'ar' ? 'نشر الإعلان' : 'Publish Listing')}
-          </Button>
-        </form>
+            <div>
+              <Label htmlFor="description">{language === 'ar' ? 'الوصف' : 'Description'}</Label>
+              <Textarea
+                id="description"
+                placeholder={language === 'ar' ? 'أدخل وصفاً مفصلاً للإعلان' : 'Enter a detailed description of the ad'}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'الحالة' : 'Condition'}</Label>
+              <RadioGroup defaultValue="new" className="flex gap-2" onValueChange={setCondition}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="new" id="r1" />
+                  <Label htmlFor="r1">{language === 'ar' ? 'جديد' : 'New'}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="used" id="r2" />
+                  <Label htmlFor="r2">{language === 'ar' ? 'مستعمل' : 'Used'}</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div>
+              <Label htmlFor="category">{language === 'ar' ? 'الفئة' : 'Category'}</Label>
+              <Select onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={language === 'ar' ? 'اختر فئة' : 'Select a category'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="region">{language === 'ar' ? 'المنطقة' : 'Region'}</Label>
+              <Select onValueChange={setSelectedRegion}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={language === 'ar' ? 'اختر منطقة' : 'Select a region'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.value} value={region.value}>
+                      {region.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button disabled={isLoading} className="w-full">
+              {isLoading
+                ? language === 'ar'
+                  ? 'جارٍ النشر...'
+                  : 'Posting...'
+                : language === 'ar'
+                  ? 'نشر الإعلان'
+                  : 'Post Ad'}
+            </Button>
+          </form>
+        </div>
       </main>
-      
+
       <BottomNav />
     </div>
   );
