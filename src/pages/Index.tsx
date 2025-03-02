@@ -5,7 +5,6 @@ import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
-import { UserStory, AddStoryButton } from "@/components/UserStory";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -181,10 +180,6 @@ const Index = () => {
         {/* Stories */}
         <section className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
           <div className="flex space-x-3 space-x-reverse mb-2">
-            <AddStoryButton />
-            {stories.map((story) => (
-              <UserStory key={story.id} story={story} />
-            ))}
           </div>
         </section>
 

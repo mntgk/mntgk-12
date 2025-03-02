@@ -18,18 +18,22 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { isAuthenticated, user, logout } = useAuth();
-  const { language, toggleLanguage } = useLanguage();
-  const isMobile = useMobile();
+  const { language, setLanguage } = useLanguage();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'ar' ? 'en' : 'ar');
   };
 
   const handleSearch = (e: React.FormEvent) => {
