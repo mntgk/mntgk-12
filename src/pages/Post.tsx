@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Post = () => {
   const [title, setTitle] = useState("");
@@ -18,11 +20,21 @@ const Post = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("");
   const [condition, setCondition] = useState("new");
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { language } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
   
   const navigate = useNavigate();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error(language === 'ar' ? 'يجب تسجيل الدخول لنشر إعلان' : 'You must be logged in to post an ad');
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate, language]);
 
   const categories = [
     { value: "vehicles", label: language === 'ar' ? 'سيارات' : 'Vehicles' },
@@ -31,6 +43,7 @@ const Post = () => {
     { value: "furniture", label: language === 'ar' ? 'أثاث' : 'Furniture' },
     { value: "clothes", label: language === 'ar' ? 'ملابس' : 'Clothes' },
     { value: "services", label: language === 'ar' ? 'خدمات' : 'Services' },
+    { value: "other", label: language === 'ar' ? 'أخرى' : 'Other' },
   ];
 
   const regions = [
@@ -39,7 +52,25 @@ const Post = () => {
     { value: "homs", label: language === 'ar' ? 'حمص' : 'Homs' },
     { value: "latakia", label: language === 'ar' ? 'اللاذقية' : 'Latakia' },
     { value: "tartus", label: language === 'ar' ? 'طرطوس' : 'Tartus' },
+    { value: "other", label: language === 'ar' ? 'أخرى' : 'Other' },
   ];
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // For demo purposes, we'll use placeholder URLs
+    const newImages = Array.from(files).map(
+      (_, index) => `https://source.unsplash.com/random/300x300?product&sig=${Date.now() + index}`
+    );
+    
+    setImages((prev) => [...prev, ...newImages]);
+    toast.success(language === 'ar' ? 'تم إضافة الصور' : 'Images added successfully');
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +82,40 @@ const Post = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
+    // Get a random image if none provided
+    const productImages = images.length > 0 
+      ? images 
+      : [`https://source.unsplash.com/random/300x300?product&sig=${Date.now()}`];
+
+    // Create a new product object
+    const newProduct = {
+      id: Math.random().toString(36).substr(2, 9),
+      title,
+      price: Number(price),
+      description,
+      category: selectedCategory,
+      region: selectedRegion,
+      condition,
+      images: productImages,
+      userId: user?.id,
+      userName: user?.name,
+      userAvatar: user?.avatar,
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      views: 0,
+    };
+
+    // Simulate API call - in a real app, this would send data to a backend
     setTimeout(() => {
+      // Get existing products from localStorage or initialize empty array
+      const existingProducts = JSON.parse(localStorage.getItem('montajak_products') || '[]');
+      
+      // Add new product to array
+      existingProducts.push(newProduct);
+      
+      // Save updated products array back to localStorage
+      localStorage.setItem('montajak_products', JSON.stringify(existingProducts));
+      
       setIsLoading(false);
       toast.success(
         language === 'ar' 
@@ -108,7 +171,7 @@ const Post = () => {
             </div>
             <div>
               <Label>{language === 'ar' ? 'الحالة' : 'Condition'}</Label>
-              <RadioGroup defaultValue="new" className="flex gap-2" onValueChange={setCondition}>
+              <RadioGroup defaultValue="new" className="flex gap-4" onValueChange={setCondition}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="new" id="r1" />
                   <Label htmlFor="r1">{language === 'ar' ? 'جديد' : 'New'}</Label>
@@ -119,6 +182,38 @@ const Post = () => {
                 </div>
               </RadioGroup>
             </div>
+            
+            {/* Images Upload */}
+            <div>
+              <Label htmlFor="images">{language === 'ar' ? 'صور الإعلان' : 'Ad Images'}</Label>
+              <div className="mt-2">
+                <Input
+                  id="images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  className="mb-2"
+                />
+                {images.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {images.map((img, index) => (
+                      <div key={index} className="relative">
+                        <img src={img} alt="product" className="w-full h-24 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div>
               <Label htmlFor="category">{language === 'ar' ? 'الفئة' : 'Category'}</Label>
               <Select onValueChange={setSelectedCategory}>

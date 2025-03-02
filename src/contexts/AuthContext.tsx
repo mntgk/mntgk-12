@@ -16,16 +16,18 @@ type User = {
 type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (emailOrPhone: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => void;
+  updateAvatar: (imageUrl: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// استخدام localStorage لتخزين المستخدم
-const LOCAL_STORAGE_KEY = 'montajak_user';
+// استخدام localStorage لتخزين المستخدم وقائمة المستخدمين
+const USER_STORAGE_KEY = 'montajak_user';
+const USERS_STORAGE_KEY = 'montajak_users';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -33,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // تحميل بيانات المستخدم من localStorage عند بدء التطبيق
   useEffect(() => {
-    const storedUser = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -41,34 +43,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Error parsing stored user:', error);
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
       }
     }
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // محاكاة طلب API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // في التطبيق الحقيقي، يجب التحقق من صحة بيانات الاعتماد من الخادم
-      // هنا نستخدم بيانات ثابتة للتجربة
-      
-      // تحقق إذا كان البريد الإلكتروني هو admin@example.com وكلمة المرور هي password
-      if (email === 'admin@example.com' && password === 'password') {
-        const mockUser: User = {
+    
+    // تهيئة قائمة المستخدمين إذا لم تكن موجودة
+    if (!localStorage.getItem(USERS_STORAGE_KEY)) {
+      const initialUsers = [
+        {
           id: '1',
           name: 'أحمد السوري',
           email: 'admin@example.com',
+          password: 'password',
           username: '@ahmed',
           location: 'دمشق، سوريا',
           joinDate: 'انضم في يناير 2023',
           avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop'
-        };
+        }
+      ];
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
+    }
+  }, []);
+
+  const login = async (emailOrPhone: string, password: string): Promise<boolean> => {
+    try {
+      // محاكاة طلب API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // قراءة قائمة المستخدمين من التخزين المحلي
+      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+      
+      // البحث عن المستخدم بواسطة البريد الإلكتروني أو رقم الهاتف وكلمة المرور
+      const foundUser = users.find((u: any) => 
+        (u.email === emailOrPhone || u.phone === emailOrPhone) && u.password === password
+      );
+      
+      if (foundUser) {
+        // لا نريد تخزين كلمة المرور في حالة المستخدم
+        const { password, ...userWithoutPassword } = foundUser;
         
-        setUser(mockUser);
+        setUser(userWithoutPassword);
         setIsAuthenticated(true);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mockUser));
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
         
         toast.success('تم تسجيل الدخول بنجاح');
         return true;
@@ -88,21 +104,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // محاكاة طلب API
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // في التطبيق الحقيقي، يجب إرسال بيانات التسجيل إلى الخادم
-      const newUser: User = {
+      // التحقق من وجود البريد الإلكتروني مسبقًا
+      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+      const existingUser = users.find((u: any) => u.email === email);
+      
+      if (existingUser) {
+        toast.error('البريد الإلكتروني مسجل مسبقًا');
+        return false;
+      }
+
+      // إنشاء مستخدم جديد
+      const newUser = {
         id: Math.random().toString(36).substr(2, 9),
         name,
         email,
         phone,
+        password, // نحتفظ بكلمة المرور فقط في قائمة المستخدمين
         username: '@' + name.split(' ')[0].toLowerCase(),
         location: 'سوريا',
         joinDate: `انضم في ${new Date().toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}`,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`
       };
 
-      setUser(newUser);
+      // إضافة المستخدم لقائمة المستخدمين
+      users.push(newUser);
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+
+      // لا نريد تخزين كلمة المرور في حالة المستخدم النشط
+      const { password: _, ...userWithoutPassword } = newUser;
+      
+      setUser(userWithoutPassword);
       setIsAuthenticated(true);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newUser));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
       
       toast.success('تم إنشاء الحساب بنجاح');
       return true;
@@ -116,7 +149,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
     toast.success('تم تسجيل الخروج بنجاح');
   };
 
@@ -124,8 +157,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      
+      // تحديث بيانات المستخدم في قائمة المستخدمين أيضًا
+      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+      const updatedUsers = users.map((u: any) => 
+        u.id === user.id ? { ...u, ...userData } : u
+      );
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+      
       toast.success('تم تحديث الملف الشخصي بنجاح');
+    }
+  };
+
+  const updateAvatar = (imageUrl: string) => {
+    if (user) {
+      const updatedUser = { ...user, avatar: imageUrl };
+      setUser(updatedUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      
+      // تحديث صورة المستخدم في قائمة المستخدمين أيضًا
+      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+      const updatedUsers = users.map((u: any) => 
+        u.id === user.id ? { ...u, avatar: imageUrl } : u
+      );
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+      
+      toast.success('تم تحديث الصورة الشخصية بنجاح');
     }
   };
 
@@ -136,7 +194,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       login, 
       register, 
       logout,
-      updateProfile
+      updateProfile,
+      updateAvatar
     }}>
       {children}
     </AuthContext.Provider>

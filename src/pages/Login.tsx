@@ -1,35 +1,51 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, LogIn, UserPlus } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, LogIn, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
   const { language, t } = useLanguage();
   
-  // حالة تسجيل الدخول
+  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  // حالة التسجيل
+  // Registration state
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Password reset state
+  const [resetEmail, setResetEmail] = useState("");
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword) return;
+    if (!loginEmail || !loginPassword) {
+      toast.error(language === 'ar' ? 'الرجاء إدخال البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
+      return;
+    }
     
     setIsLoggingIn(true);
     const success = await login(loginEmail, loginPassword);
@@ -42,15 +58,53 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!registerName || !registerEmail || !registerPassword) return;
+    if (!registerName || !registerEmail || !registerPassword) {
+      toast.error(language === 'ar' ? 'الرجاء إدخال جميع الحقول المطلوبة' : 'Please enter all required fields');
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerEmail)) {
+      toast.error(language === 'ar' ? 'الرجاء إدخال بريد إلكتروني صحيح' : 'Please enter a valid email');
+      return;
+    }
+    
+    // Basic password validation
+    if (registerPassword.length < 6) {
+      toast.error(language === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+      return;
+    }
     
     setIsRegistering(true);
     const success = await register(registerName, registerEmail, registerPassword, registerPhone);
     setIsRegistering(false);
     
     if (success) {
+      toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
       navigate('/');
     }
+  };
+
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error(language === 'ar' ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email');
+      return;
+    }
+    
+    setIsResetting(true);
+    
+    // Simulate password reset
+    setTimeout(() => {
+      setIsResetting(false);
+      toast.success(
+        language === 'ar'
+          ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'
+          : 'Password reset link sent to your email'
+      );
+      setShowResetForm(false);
+    }, 1500);
   };
 
   return (
@@ -82,20 +136,21 @@ const Login = () => {
             </p>
           </div>
           
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" className="flex items-center gap-2">
-                <LogIn className="h-4 w-4" />
-                <span>{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</span>
-              </TabsTrigger>
-              <TabsTrigger value="register" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                <span>{language === 'ar' ? 'إنشاء حساب' : 'Register'}</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4 mt-4">
+          {showResetForm ? (
+            <div className="space-y-4">
+              <button 
+                onClick={() => setShowResetForm(false)} 
+                className="text-primary flex items-center gap-2"
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span>{language === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to login'}</span>
+              </button>
+              
+              <h2 className="text-xl font-semibold">
+                {language === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
+              </h2>
+              
+              <form onSubmit={handleResetPassword} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
@@ -103,141 +158,190 @@ const Login = () => {
                   <Input
                     type="email"
                     placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
                     required
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {language === 'ar' ? 'كلمة المرور' : 'Password'}
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showLoginPassword ? "text" : "password"}
-                      placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                    <button 
-                      type="button"
-                      className="absolute inset-y-0 left-0 px-3 flex items-center" 
-                      onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    >
-                      {showLoginPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  </div>
                 </div>
                 
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isLoggingIn}
+                  disabled={isResetting}
                 >
-                  {isLoggingIn 
-                    ? (language === 'ar' ? 'جاري تسجيل الدخول...' : 'Logging in...') 
-                    : (language === 'ar' ? 'تسجيل الدخول' : 'Login')}
+                  {isResetting 
+                    ? (language === 'ar' ? 'جاري إرسال الرابط...' : 'Sending link...') 
+                    : (language === 'ar' ? 'إرسال رابط إعادة التعيين' : 'Send Reset Link')}
                 </Button>
-                
-                <div className="text-center text-sm">
-                  <Link to="#" className="text-primary hover:underline">
-                    {language === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
-                  </Link>
-                </div>
-                
-                <div className="text-center text-xs text-muted-foreground">
-                  {language === 'ar' 
-                    ? 'تجربة عملية: استخدم admin@example.com وكلمة المرور: password' 
-                    : 'Demo: Use admin@example.com and password: password'}
-                </div>
               </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder={language === 'ar' ? 'أدخل اسمك الكامل' : 'Enter your full name'}
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
-                    value={registerEmail}
-                    onChange={(e) => setRegisterEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
-                  </label>
-                  <Input
-                    type="tel"
-                    placeholder={language === 'ar' ? 'أدخل رقم هاتفك' : 'Enter your phone number'}
-                    value={registerPhone}
-                    onChange={(e) => setRegisterPhone(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {language === 'ar' ? 'كلمة المرور' : 'Password'}
-                  </label>
-                  <div className="relative">
+            </div>
+          ) : (
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login" className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" />
+                  <span>{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</span>
+                </TabsTrigger>
+                <TabsTrigger value="register" className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  <span>{language === 'ar' ? 'إنشاء حساب' : 'Register'}</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'البريد الإلكتروني أو رقم الهاتف' : 'Email or Phone'}
+                    </label>
                     <Input
-                      type={showRegisterPassword ? "text" : "password"}
-                      placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      type="text"
+                      placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني أو رقم الهاتف' : 'Enter your email or phone'}
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       required
-                      minLength={6}
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'كلمة المرور' : 'Password'}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showLoginPassword ? "text" : "password"}
+                        placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                      />
+                      <button 
+                        type="button"
+                        className="absolute inset-y-0 left-0 px-3 flex items-center" 
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoggingIn}
+                  >
+                    {isLoggingIn 
+                      ? (language === 'ar' ? 'جاري تسجيل الدخول...' : 'Logging in...') 
+                      : (language === 'ar' ? 'تسجيل الدخول' : 'Login')}
+                  </Button>
+                  
+                  <div className="text-center text-sm">
                     <button 
                       type="button"
-                      className="absolute inset-y-0 left-0 px-3 flex items-center" 
-                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      onClick={() => setShowResetForm(true)}
+                      className="text-primary hover:underline"
                     >
-                      {showRegisterPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {language === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                     </button>
                   </div>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isRegistering}
-                >
-                  {isRegistering 
-                    ? (language === 'ar' ? 'جاري إنشاء الحساب...' : 'Creating account...') 
-                    : (language === 'ar' ? 'إنشاء حساب' : 'Register')}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+                  
+                  <div className="text-center text-xs text-muted-foreground">
+                    {language === 'ar' 
+                      ? 'تجربة عملية: استخدم admin@example.com وكلمة المرور: password' 
+                      : 'Demo: Use admin@example.com and password: password'}
+                  </div>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder={language === 'ar' ? 'أدخل اسمك الكامل' : 'Enter your full name'}
+                      value={registerName}
+                      onChange={(e) => setRegisterName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
+                    </label>
+                    <Input
+                      type="tel"
+                      placeholder={language === 'ar' ? 'أدخل رقم هاتفك' : 'Enter your phone number'}
+                      value={registerPhone}
+                      onChange={(e) => setRegisterPhone(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {language === 'ar' ? 'كلمة المرور' : 'Password'}
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showRegisterPassword ? "text" : "password"}
+                        placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <button 
+                        type="button"
+                        className="absolute inset-y-0 left-0 px-3 flex items-center" 
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      >
+                        {showRegisterPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' 
+                        ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' 
+                        : 'Password must be at least 6 characters'}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isRegistering}
+                  >
+                    {isRegistering 
+                      ? (language === 'ar' ? 'جاري إنشاء الحساب...' : 'Creating account...') 
+                      : (language === 'ar' ? 'إنشاء حساب' : 'Register')}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </main>
     </div>

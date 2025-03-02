@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Bookmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -20,17 +21,48 @@ export function ProductCard({ id, title, price, image, category, location, likes
   const [likesCount, setLikesCount] = useState(likes);
   const [isSaved, setIsSaved] = useState(false);
   const { language } = useLanguage();
+  const { isAuthenticated, user } = useAuth();
+  
+  // Check if product is saved in favorites
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const savedProducts = JSON.parse(localStorage.getItem(`montajak_favorites_${user.id}`) || '[]');
+      setIsSaved(savedProducts.includes(id));
+      
+      const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
+      setIsLiked(likedProducts.includes(id));
+    }
+  }, [id, isAuthenticated, user]);
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
+    if (!isAuthenticated) {
+      toast.error(language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'Please login first');
+      return;
+    }
+    
     if (isLiked) {
       setLikesCount(likesCount - 1);
       toast.success(language === 'ar' ? 'تم إلغاء الإعجاب' : 'Like removed');
+      
+      // Update liked products in localStorage
+      if (user) {
+        const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
+        const updatedLikes = likedProducts.filter((productId: string) => productId !== id);
+        localStorage.setItem(`montajak_likes_${user.id}`, JSON.stringify(updatedLikes));
+      }
     } else {
       setLikesCount(likesCount + 1);
       toast.success(language === 'ar' ? 'تم الإعجاب' : 'Liked successfully');
+      
+      // Update liked products in localStorage
+      if (user) {
+        const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
+        likedProducts.push(id);
+        localStorage.setItem(`montajak_likes_${user.id}`, JSON.stringify(likedProducts));
+      }
     }
     setIsLiked(!isLiked);
   };
@@ -39,11 +71,27 @@ export function ProductCard({ id, title, price, image, category, location, likes
     e.preventDefault();
     e.stopPropagation();
     
-    setIsSaved(!isSaved);
-    if (!isSaved) {
-      toast.success(language === 'ar' ? 'تم حفظ المنتج في المفضلة' : 'Saved to favorites');
-    } else {
-      toast.success(language === 'ar' ? 'تم إزالة المنتج من المفضلة' : 'Removed from favorites');
+    if (!isAuthenticated) {
+      toast.error(language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'Please login first');
+      return;
+    }
+    
+    if (user) {
+      const savedProducts = JSON.parse(localStorage.getItem(`montajak_favorites_${user.id}`) || '[]');
+      
+      if (isSaved) {
+        // Remove from favorites
+        const updatedSaved = savedProducts.filter((productId: string) => productId !== id);
+        localStorage.setItem(`montajak_favorites_${user.id}`, JSON.stringify(updatedSaved));
+        toast.success(language === 'ar' ? 'تم إزالة المنتج من المفضلة' : 'Removed from favorites');
+      } else {
+        // Add to favorites
+        savedProducts.push(id);
+        localStorage.setItem(`montajak_favorites_${user.id}`, JSON.stringify(savedProducts));
+        toast.success(language === 'ar' ? 'تم حفظ المنتج في المفضلة' : 'Saved to favorites');
+      }
+      
+      setIsSaved(!isSaved);
     }
   };
 
