@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, MapPin, Filter, X, Bell, Mic, Globe, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Search, Menu, MapPin, Filter, X, Bell, Mic, Globe, Facebook, Instagram, Twitter, Youtube, User, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,9 +34,15 @@ export function Navbar() {
   const [speechTranscript, setSpeechTranscript] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const { language, setLanguage, t, translateRegion } = useLanguage();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const toggleLanguage = () => {
     setLanguage(language === 'ar' ? 'en' : 'ar');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   const handleVoiceSearch = () => {
@@ -129,6 +135,22 @@ export function Navbar() {
                 <Link to="/favorites" className="px-2 py-2 text-lg font-medium hover:text-primary">{t('favorites')}</Link>
                 <Link to="/post" className="px-2 py-2 text-lg font-medium hover:text-primary">{t('post')}</Link>
                 <Link to="/notifications" className="px-2 py-2 text-lg font-medium hover:text-primary">{t('notifications')}</Link>
+                
+                {isAuthenticated ? (
+                  <button 
+                    onClick={handleLogout}
+                    className="px-2 py-2 text-lg font-medium hover:text-primary text-start flex items-center"
+                  >
+                    <LogOut className="h-5 w-5 ml-2" />
+                    {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                  </button>
+                ) : (
+                  <Link to="/login" className="px-2 py-2 text-lg font-medium hover:text-primary flex items-center">
+                    <LogIn className="h-5 w-5 ml-2" />
+                    {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                  </Link>
+                )}
+                
                 <hr className="my-2" />
                 <p className="px-2 py-1 text-md font-semibold">{t('chooseRegion')}</p>
                 {["دمشق", "حلب", "حمص", "حماه", "اللاذقية", "طرطوس", "درعا", "السويداء", "القنيطرة", "ريف دمشق"].map((city) => (
@@ -317,6 +339,54 @@ export function Navbar() {
                   <span>{t('search')}</span>
                 </Button>
               </div>
+
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="hidden md:flex">
+                      <User className="h-4 w-4 ml-2" />
+                      <span className="max-w-[100px] truncate">
+                        {user?.name?.split(' ')[0]}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">
+                        <User className="h-4 w-4 ml-2" />
+                        {language === 'ar' ? 'حسابي' : 'My Profile'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/favorites">
+                        <Heart className="h-4 w-4 ml-2" />
+                        {language === 'ar' ? 'المفضلة' : 'Favorites'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/post">
+                        <Tag className="h-4 w-4 ml-2" />
+                        {language === 'ar' ? 'إضافة إعلان' : 'Post Ad'}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                      <LogOut className="h-4 w-4 ml-2" />
+                      {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="hidden md:flex"
+                  onClick={() => navigate('/login')}
+                >
+                  <LogIn className="h-4 w-4 ml-2" />
+                  <span>{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</span>
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
