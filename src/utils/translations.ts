@@ -27,7 +27,18 @@ type TranslationKey =
   | 'price'
   | 'category'
   | 'categories'
-  | 'regions';
+  | 'regions'
+  | 'postAd'
+  | 'editAd'
+  | 'adTitle'
+  | 'adImages'
+  | 'currency'
+  | 'condition'
+  | 'new'
+  | 'used'
+  | 'selectCategory'
+  | 'selectRegion'
+  | 'notificationPreferences';
 
 export const translations: Record<'ar' | 'en', Record<TranslationKey, string>> = {
   ar: {
@@ -58,7 +69,18 @@ export const translations: Record<'ar' | 'en', Record<TranslationKey, string>> =
     price: 'السعر',
     category: 'الفئة',
     categories: 'الفئات',
-    regions: 'المناطق'
+    regions: 'المناطق',
+    postAd: 'نشر إعلان جديد',
+    editAd: 'تعديل الإعلان',
+    adTitle: 'عنوان الإعلان',
+    adImages: 'صور الإعلان',
+    currency: 'العملة',
+    condition: 'الحالة',
+    new: 'جديد',
+    used: 'مستعمل',
+    selectCategory: 'اختر فئة',
+    selectRegion: 'اختر منطقة',
+    notificationPreferences: 'تفضيلات الإشعارات'
   },
   en: {
     appName: 'Your Product',
@@ -88,7 +110,18 @@ export const translations: Record<'ar' | 'en', Record<TranslationKey, string>> =
     price: 'Price',
     category: 'Category',
     categories: 'Categories',
-    regions: 'Regions'
+    regions: 'Regions',
+    postAd: 'Post a New Ad',
+    editAd: 'Edit Ad',
+    adTitle: 'Ad Title',
+    adImages: 'Ad Images',
+    currency: 'Currency',
+    condition: 'Condition',
+    new: 'New',
+    used: 'Used',
+    selectCategory: 'Select a category',
+    selectRegion: 'Select a region',
+    notificationPreferences: 'Notification Preferences'
   }
 };
 

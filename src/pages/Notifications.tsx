@@ -1,22 +1,16 @@
 
 import { useState } from "react";
-import { Bell, User, Calendar, ShoppingBag, MessageCircle, Heart, Settings, Filter } from "lucide-react";
+import { Bell, User, Calendar, ShoppingBag, MessageCircle, Heart, Settings } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Switch
-} from "@/components/ui/switch";
+import { SheetTrigger } from "@/components/ui/sheet";
+import { NotificationItem, NotificationType } from "@/components/notifications/NotificationItem";
+import { FilterButtons } from "@/components/notifications/FilterButtons";
+import { EmptyState } from "@/components/notifications/EmptyState";
+import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 
 const notificationsData = [
   {
@@ -119,8 +113,8 @@ const notificationsData = [
 ];
 
 const Notifications = () => {
-  const { language, t } = useLanguage();
-  const [notifications, setNotifications] = useState(notificationsData);
+  const { language } = useLanguage();
+  const [notifications, setNotifications] = useState<NotificationType[]>(notificationsData);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [filters, setFilters] = useState<string[]>([]);
   const [preferences, setPreferences] = useState({
@@ -181,11 +175,23 @@ const Notifications = () => {
   };
 
   const filterNotifications = (type: string) => {
+    if (type === 'all') {
+      setFilters([]);
+      return;
+    }
+    
     if (filters.includes(type)) {
       setFilters(filters.filter(t => t !== type));
     } else {
       setFilters([...filters, type]);
     }
+  };
+
+  const markNotificationAsRead = (id: number) => {
+    const updatedNotifications = notifications.map(n => 
+      n.id === id ? {...n, read: true} : n
+    );
+    setNotifications(updatedNotifications);
   };
 
   const filteredNotifications = filters.length > 0
@@ -201,82 +207,12 @@ const Notifications = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">{language === 'ar' ? 'الإشعارات' : 'Notifications'}</h1>
           <div className="flex gap-2">
-            <Sheet open={preferencesOpen} onOpenChange={setPreferencesOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>{language === 'ar' ? 'تفضيلات الإشعارات' : 'Notification Preferences'}</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side={language === 'ar' ? "right" : "left"}>
-                <SheetHeader>
-                  <SheetTitle>{language === 'ar' ? 'تفضيلات الإشعارات' : 'Notification Preferences'}</SheetTitle>
-                  <SheetDescription>
-                    {language === 'ar' 
-                      ? 'قم بتخصيص نوع الإشعارات التي ترغب في تلقيها' 
-                      : 'Customize the types of notifications you want to receive'}
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'الرسائل' : 'Messages'}</span>
-                    <Switch 
-                      checked={preferences.messages} 
-                      onCheckedChange={() => toggleNotificationPreference('messages')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'الإعجابات' : 'Likes'}</span>
-                    <Switch 
-                      checked={preferences.likes} 
-                      onCheckedChange={() => toggleNotificationPreference('likes')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'تحديثات النظام' : 'System Updates'}</span>
-                    <Switch 
-                      checked={preferences.system} 
-                      onCheckedChange={() => toggleNotificationPreference('system')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'طلبات التواصل' : 'Contact Requests'}</span>
-                    <Switch 
-                      checked={preferences.orders} 
-                      onCheckedChange={() => toggleNotificationPreference('orders')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'الإعلانات الجديدة' : 'New Listings'}</span>
-                    <Switch 
-                      checked={preferences.newListings} 
-                      onCheckedChange={() => toggleNotificationPreference('newListings')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'العروض والفعاليات' : 'Offers & Events'}</span>
-                    <Switch 
-                      checked={preferences.events} 
-                      onCheckedChange={() => toggleNotificationPreference('events')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'التعليقات' : 'Comments'}</span>
-                    <Switch 
-                      checked={preferences.comments} 
-                      onCheckedChange={() => toggleNotificationPreference('comments')} 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>{language === 'ar' ? 'الإعلانات المطابقة للاهتمامات' : 'Ads Matching Interests'}</span>
-                    <Switch 
-                      checked={preferences.adsMatching} 
-                      onCheckedChange={() => toggleNotificationPreference('adsMatching')} 
-                    />
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" onClick={() => setPreferencesOpen(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                <span>{language === 'ar' ? 'تفضيلات الإشعارات' : 'Notification Preferences'}</span>
+              </Button>
+            </SheetTrigger>
             
             <Button 
               variant="ghost" 
@@ -302,130 +238,29 @@ const Notifications = () => {
         </div>
         
         {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button 
-            variant={filters.length === 0 ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFilters([])}
-          >
-            {language === 'ar' ? 'الكل' : 'All'}
-          </Button>
-          <Button 
-            variant={filters.includes('message') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('message')}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'رسائل' : 'Messages'}
-          </Button>
-          <Button 
-            variant={filters.includes('like') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('like')}
-          >
-            <Heart className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'إعجابات' : 'Likes'}
-          </Button>
-          <Button 
-            variant={filters.includes('order') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('order')}
-          >
-            <ShoppingBag className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'طلبات' : 'Requests'}
-          </Button>
-          <Button 
-            variant={filters.includes('system') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('system')}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'النظام' : 'System'}
-          </Button>
-          <Button 
-            variant={filters.includes('comment') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('comment')}
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'تعليقات' : 'Comments'}
-          </Button>
-          <Button 
-            variant={filters.includes('ads') ? "default" : "outline"} 
-            size="sm"
-            onClick={() => filterNotifications('ads')}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'إعلانات مطابقة' : 'Matching Ads'}
-          </Button>
-        </div>
+        <FilterButtons filters={filters} onFilterChange={filterNotifications} />
         
         {/* Notifications List */}
         <div className="space-y-3">
           {filteredNotifications.map((notification) => (
-            <div
+            <NotificationItem 
               key={notification.id}
-              className={`rounded-xl border p-4 transition-all ${
-                !notification.read ? "bg-primary/5 border-primary/20" : "bg-card"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-1 h-10 w-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center">
-                  {notification.icon}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`font-semibold ${!notification.read ? "text-primary" : ""}`}>
-                      {notification.title[language]}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">{notification.time[language]}</span>
-                  </div>
-                  <p className="mt-1 text-sm">{notification.content[language]}</p>
-                  <div className="mt-2 flex justify-end">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 px-2 text-xs"
-                      onClick={() => deleteNotification(notification.id)}
-                    >
-                      {language === 'ar' ? 'حذف' : 'Delete'}
-                    </Button>
-                    {!notification.read && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 px-2 text-xs"
-                        onClick={() => {
-                          const updatedNotifications = notifications.map(n => 
-                            n.id === notification.id ? {...n, read: true} : n
-                          );
-                          setNotifications(updatedNotifications);
-                        }}
-                      >
-                        {language === 'ar' ? 'تعليم كمقروء' : 'Mark as read'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+              notification={notification}
+              onDelete={deleteNotification}
+              onMarkAsRead={markNotificationAsRead}
+            />
           ))}
         </div>
         
-        {filteredNotifications.length === 0 && (
-          <div className="text-center py-16">
-            <Bell className="h-16 w-16 mx-auto text-muted-foreground" />
-            <h2 className="mt-4 text-xl font-bold">
-              {language === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              {language === 'ar' 
-                ? 'سيتم إعلامك هنا عند وجود إشعارات جديدة' 
-                : 'You will be notified here when there are new notifications'}
-            </p>
-          </div>
-        )}
+        {filteredNotifications.length === 0 && <EmptyState />}
       </main>
+
+      <NotificationPreferences 
+        open={preferencesOpen}
+        onOpenChange={setPreferencesOpen}
+        preferences={preferences}
+        onTogglePreference={toggleNotificationPreference}
+      />
 
       <BottomNav />
     </div>
