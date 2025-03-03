@@ -25,14 +25,14 @@ const Profile = () => {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   
-  // حالة تعديل الملف الشخصي
+  // Profile edit state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editName, setEditName] = useState(user?.name || "");
-  const [editUsername, setEditUsername] = useState(user?.username || "");
-  const [editLocation, setEditLocation] = useState(user?.location || "");
-  const [editAvatar, setEditAvatar] = useState(user?.avatar || "");
+  const [editName, setEditName] = useState(user?.profile?.full_name || "");
+  const [editUsername, setEditUsername] = useState(user?.profile?.username || "");
+  const [editLocation, setEditLocation] = useState(user?.profile?.location || "");
+  const [editAvatar, setEditAvatar] = useState(user?.profile?.avatar || "");
   
-  // إذا لم يكن المستخدم مسجلاً، توجيهه إلى صفحة تسجيل الدخول
+  // Redirect if not logged in
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -69,7 +69,7 @@ const Profile = () => {
   
   const handleSaveProfile = () => {
     updateProfile({
-      name: editName,
+      full_name: editName,
       username: editUsername,
       location: editLocation,
       avatar: editAvatar
@@ -100,14 +100,14 @@ const Profile = () => {
           <div className="flex space-x-4 space-x-reverse">
             <div className="h-20 w-20 rounded-full overflow-hidden">
               <img 
-                src={user?.avatar} 
-                alt={user?.name} 
+                src={user?.profile?.avatar} 
+                alt={user?.profile?.full_name || "User"} 
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">{user?.name}</h2>
+                <h2 className="text-xl font-bold">{user?.profile?.full_name}</h2>
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -185,12 +185,12 @@ const Profile = () => {
                   </DialogContent>
                 </Dialog>
               </div>
-              <p className="text-muted-foreground">{user?.username}</p>
+              <p className="text-muted-foreground">{user?.profile?.username}</p>
               <div className="mt-2 flex items-center text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 ml-1" />
-                <span>{user?.location}</span>
+                <span>{user?.profile?.location}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{user?.joinDate}</p>
+              <p className="text-xs text-muted-foreground mt-1">{user?.profile?.join_date}</p>
             </div>
           </div>
         </div>

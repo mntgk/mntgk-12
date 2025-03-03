@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -124,10 +123,10 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
-                  {user?.avatar ? (
+                  {user?.profile?.avatar ? (
                     <img 
-                      src={user.avatar} 
-                      alt={user.name} 
+                      src={user.profile.avatar} 
+                      alt={user.profile?.full_name || 'User'} 
                       className="h-8 w-8 rounded-full object-cover"
                     />
                   ) : (
@@ -137,7 +136,7 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
-                  {user?.name}
+                  {user?.profile?.full_name || 'User'}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -190,8 +189,8 @@ const Post = () => {
         condition,
         images: productImages,
         userId: user?.id,
-        userName: user?.name,
-        userAvatar: user?.avatar,
+        userName: user?.profile?.full_name,
+        userAvatar: user?.profile?.avatar,
         createdAt: new Date().toISOString(),
         likes: 0,
         views: 0,

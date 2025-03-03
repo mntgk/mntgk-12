@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
@@ -24,6 +23,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   loading: boolean;
   session: Session | null;
+  updateProfile: (profileData: Partial<Profile>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -177,6 +177,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Update user profile
+  const updateProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
+    try {
+      if (!user) {
+        toast.error(language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'You must be logged in first');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id);
+
+      if (error) {
+        console.error("Profile update error:", error.message);
+        toast.error(language === 'ar' ? 'فشل تحديث الملف الشخصي' : 'Failed to update profile');
+        return false;
+      }
+
+      // Update the local user state with the new profile data
+      setUser(prevUser => {
+        if (!prevUser) return null;
+        return {
+          ...prevUser,
+          profile: {
+            ...prevUser.profile,
+            ...profileData
+          }
+        };
+      });
+
+      toast.success(language === 'ar' ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully');
+      return true;
+    } catch (error) {
+      console.error("Unexpected profile update error:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
+      return false;
+    }
+  };
+
   // Auth context value
   const value: AuthContextType = {
     isAuthenticated: !!user,
@@ -186,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     loading,
     session,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
