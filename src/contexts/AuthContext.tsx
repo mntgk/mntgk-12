@@ -1,249 +1,202 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useLanguage } from "./LanguageContext";
 
-type User = {
+interface Profile {
   id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  username: string;
-  location: string;
-  joinDate: string;
-  avatar: string;
-};
+  full_name: string;
+  phone_number?: string;
+  avatar?: string;
+  location?: string;
+  username?: string;
+  join_date?: string;
+}
 
-type AuthContextType = {
+interface AuthContextType {
   isAuthenticated: boolean;
-  user: User | null;
-  login: (emailOrPhone: string, password: string) => Promise<boolean>;
+  user: (User & { profile?: Profile }) | null;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
-  logout: () => void;
-  updateProfile: (userData: Partial<User>) => void;
-  updateAvatar: (imageFile: File) => Promise<boolean>;
-};
+  logout: () => Promise<void>;
+  loading: boolean;
+  session: Session | null;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// استخدام localStorage لتخزين المستخدم وقائمة المستخدمين
-const USER_STORAGE_KEY = 'montajak_user';
-const USERS_STORAGE_KEY = 'montajak_users';
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<(User & { profile?: Profile }) | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { language } = useLanguage();
+  const navigate = useNavigate();
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
-  // تحميل بيانات المستخدم من localStorage عند بدء التطبيق
+  // Initialize session and user state from Supabase
   useEffect(() => {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    if (storedUser) {
+    const getCurrentSession = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    }
-    
-    // تهيئة قائمة المستخدمين إذا لم تكن موجودة
-    if (!localStorage.getItem(USERS_STORAGE_KEY)) {
-      const initialUsers = [
-        {
-          id: '1',
-          name: 'أحمد السوري',
-          email: 'admin@example.com',
-          password: 'password',
-          username: '@ahmed',
-          location: 'دمشق، سوريا',
-          joinDate: 'انضم في يناير 2023',
-          avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop'
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
         }
-      ];
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-    }
+
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getCurrentSession();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user || null);
+      
+      if (newSession?.user) {
+        await fetchUserProfile(newSession.user.id);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (emailOrPhone: string, password: string): Promise<boolean> => {
+  // Fetch user profile data
+  const fetchUserProfile = async (userId: string) => {
     try {
-      // محاكاة طلب API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // قراءة قائمة المستخدمين من التخزين المحلي
-      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-      
-      // طباعة المستخدمين وبيانات الدخول للتصحيح
-      console.log('Trying to login with:', { emailOrPhone, password });
-      console.log('Available users:', users);
-      
-      // البحث عن المستخدم بواسطة البريد الإلكتروني أو رقم الهاتف وكلمة المرور
-      const foundUser = users.find((u: any) => 
-        (u.email === emailOrPhone || u.phone === emailOrPhone) && u.password === password
-      );
-      
-      console.log('Found user:', foundUser);
-      
-      if (foundUser) {
-        // لا نريد تخزين كلمة المرور في حالة المستخدم
-        const { password, ...userWithoutPassword } = foundUser;
-        
-        setUser(userWithoutPassword);
-        setIsAuthenticated(true);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
-        
-        toast.success(
-          'تم تسجيل الدخول بنجاح'
-        );
-        return true;
-      } else {
-        toast.error(
-          'البريد الإلكتروني أو كلمة المرور غير صحيحة'
-        );
-        return false;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setUser(prevUser => {
+          if (!prevUser) return null;
+          return { ...prevUser, profile: data as Profile };
+        });
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error(
-        'حدث خطأ أثناء تسجيل الدخول'
-      );
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
+  // Login with email and password
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Login error:", error.message);
+        toast.error(language === 'ar' ? 'فشل تسجيل الدخول: ' + error.message : 'Login failed: ' + error.message);
+        return false;
+      }
+
+      if (data.user) {
+        toast.success(language === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Logged in successfully');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Unexpected login error:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
       return false;
     }
   };
 
+  // Register new user
   const register = async (name: string, email: string, password: string, phone?: string): Promise<boolean> => {
     try {
-      // محاكاة طلب API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone_number: phone,
+          },
+        },
+      });
 
-      // قراءة قائمة المستخدمين من التخزين المحلي
-      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-      
-      // التحقق من وجود البريد الإلكتروني مسبقًا
-      const existingUser = users.find((u: any) => u.email === email);
-      
-      if (existingUser) {
-        toast.error(
-          'البريد الإلكتروني مسجل مسبقًا'
-        );
+      if (error) {
+        console.error("Registration error:", error.message);
+        toast.error(language === 'ar' ? 'فشل التسجيل: ' + error.message : 'Registration failed: ' + error.message);
         return false;
       }
 
-      // إنشاء مستخدم جديد
-      const newUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        phone,
-        password, // نحتفظ بكلمة المرور فقط في قائمة المستخدمين
-        username: '@' + name.split(' ')[0].toLowerCase(),
-        location: 'سوريا',
-        joinDate: `انضم في ${new Date().toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}`,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`
-      };
+      if (data.user) {
+        toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
+        return true;
+      }
 
-      // طباعة المستخدم الجديد للتصحيح
-      console.log('Creating new user:', newUser);
-
-      // إضافة المستخدم لقائمة المستخدمين
-      users.push(newUser);
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-
-      // لا نريد تخزين كلمة المرور في حالة المستخدم النشط
-      const { password: _, ...userWithoutPassword } = newUser;
-      
-      setUser(userWithoutPassword);
-      setIsAuthenticated(true);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userWithoutPassword));
-      
-      toast.success(
-        'تم إنشاء الحساب بنجاح'
-      );
-      return true;
+      return false;
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error(
-        'حدث خطأ أثناء إنشاء الحساب'
-      );
+      console.error("Unexpected registration error:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
       return false;
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    toast.success('تم تسجيل الخروج بنجاح');
-  };
-
-  const updateProfile = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
-      
-      // تحديث بيانات المستخدم في قائمة المستخدمين أيضًا
-      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-      const updatedUsers = users.map((u: any) => 
-        u.id === user.id ? { ...u, ...userData } : u
-      );
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-      
-      toast.success('تم تحديث الملف الشخصي بنجاح');
-    }
-  };
-
-  const updateAvatar = async (imageFile: File): Promise<boolean> => {
-    if (!user) return false;
-    
+  // Logout current user
+  const logout = async (): Promise<void> => {
     try {
-      // تحويل الصورة إلى base64
-      const imageUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(imageFile);
-      });
+      const { error } = await supabase.auth.signOut();
       
-      const updatedUser = { ...user, avatar: imageUrl };
-      setUser(updatedUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      if (error) {
+        throw error;
+      }
       
-      // تحديث صورة المستخدم في قائمة المستخدمين أيضًا
-      const users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-      const updatedUsers = users.map((u: any) => 
-        u.id === user.id ? { ...u, avatar: imageUrl } : u
-      );
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
-      
-      toast.success('تم تحديث الصورة الشخصية بنجاح');
-      return true;
+      toast.success(language === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully');
+      navigate('/');
     } catch (error) {
-      console.error('Error updating avatar:', error);
-      toast.error('حدث خطأ أثناء تحديث الصورة الشخصية');
-      return false;
+      console.error("Logout error:", error);
+      toast.error(language === 'ar' ? 'فشل تسجيل الخروج' : 'Logout failed');
     }
   };
 
-  return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      user, 
-      login, 
-      register, 
-      logout,
-      updateProfile,
-      updateAvatar
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Auth context value
+  const value: AuthContextType = {
+    isAuthenticated: !!user,
+    user,
+    login,
+    register,
+    logout,
+    loading,
+    session,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
+  
   return context;
 };

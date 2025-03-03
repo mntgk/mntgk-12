@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Bookmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductCardProps {
   id: string;
@@ -41,13 +41,28 @@ export function ProductCard({
   
   // Check if product is saved in favorites
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const savedProducts = JSON.parse(localStorage.getItem(`montajak_favorites_${user.id}`) || '[]');
-      setIsSaved(savedProducts.includes(id));
-      
-      const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
-      setIsLiked(likedProducts.includes(id));
-    }
+    // Skip if not authenticated
+    if (!isAuthenticated || !user) return;
+
+    const checkIfFavorite = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('product_id', id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        setIsSaved(!!data);
+      } catch (error) {
+        console.error("Error checking favorite status:", error);
+      }
+    };
+
+    // For now, keep likes count from props
+    // In the future this could be replaced with a real likes system
+    checkIfFavorite();
   }, [id, isAuthenticated, user]);
 
   const handleLike = (e: React.MouseEvent) => {
@@ -59,31 +74,19 @@ export function ProductCard({
       return;
     }
     
+    // For now, just update UI without backend storage
+    // In a future implementation, this could connect to a real likes system
     if (isLiked) {
       setLikesCount(likesCount - 1);
       toast.success(language === 'ar' ? 'تم إلغاء الإعجاب' : 'Like removed');
-      
-      // Update liked products in localStorage
-      if (user) {
-        const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
-        const updatedLikes = likedProducts.filter((productId: string) => productId !== id);
-        localStorage.setItem(`montajak_likes_${user.id}`, JSON.stringify(updatedLikes));
-      }
     } else {
       setLikesCount(likesCount + 1);
       toast.success(language === 'ar' ? 'تم الإعجاب' : 'Liked successfully');
-      
-      // Update liked products in localStorage
-      if (user) {
-        const likedProducts = JSON.parse(localStorage.getItem(`montajak_likes_${user.id}`) || '[]');
-        likedProducts.push(id);
-        localStorage.setItem(`montajak_likes_${user.id}`, JSON.stringify(likedProducts));
-      }
     }
     setIsLiked(!isLiked);
   };
 
-  const handleSave = (e: React.MouseEvent) => {
+  const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -92,22 +95,36 @@ export function ProductCard({
       return;
     }
     
-    if (user) {
-      const savedProducts = JSON.parse(localStorage.getItem(`montajak_favorites_${user.id}`) || '[]');
-      
+    if (!user) return;
+    
+    try {
       if (isSaved) {
         // Remove from favorites
-        const updatedSaved = savedProducts.filter((productId: string) => productId !== id);
-        localStorage.setItem(`montajak_favorites_${user.id}`, JSON.stringify(updatedSaved));
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', id);
+          
+        if (error) throw error;
         toast.success(language === 'ar' ? 'تم إزالة المنتج من المفضلة' : 'Removed from favorites');
       } else {
         // Add to favorites
-        savedProducts.push(id);
-        localStorage.setItem(`montajak_favorites_${user.id}`, JSON.stringify(savedProducts));
+        const { error } = await supabase
+          .from('favorites')
+          .insert({ 
+            user_id: user.id, 
+            product_id: id 
+          });
+          
+        if (error) throw error;
         toast.success(language === 'ar' ? 'تم حفظ المنتج في المفضلة' : 'Saved to favorites');
       }
       
       setIsSaved(!isSaved);
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء تحديث المفضلة' : 'Error updating favorites');
     }
   };
 

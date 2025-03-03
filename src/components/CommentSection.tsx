@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +28,7 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState("");
   const { language } = useLanguage();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const handleSubmitComment = () => {
     if (!isAuthenticated) {
@@ -47,8 +47,8 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
       text: newComment,
       createdAt: new Date(),
       author: {
-        name: "المستخدم الحالي",
-        avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36",
+        name: user?.profile?.full_name || 'المستخدم',
+        avatar: user?.profile?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff",
       },
     };
 
@@ -76,11 +76,13 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
       {/* Comment form */}
       <div className="flex items-start gap-2">
         <Avatar className="h-10 w-10">
-          <img 
-            src="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
-            alt="User"
-            className="rounded-full"
+          <AvatarImage 
+            src={user?.profile?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff"} 
+            alt={user?.profile?.full_name || "User"}
           />
+          <AvatarFallback>
+            {user?.profile?.full_name?.charAt(0) || "U"}
+          </AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <Textarea
@@ -107,7 +109,8 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
           {comments.map((comment) => (
             <div key={comment.id} className="flex gap-3 p-3 border rounded-lg">
               <Avatar className="h-10 w-10">
-                <img src={comment.author.avatar} alt={comment.author.name} className="rounded-full" />
+                <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">

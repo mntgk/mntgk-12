@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, register, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated, loading } = useAuth();
   const { language } = useLanguage();
   
   // Login state
@@ -35,10 +36,10 @@ const Login = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !loading) {
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,35 +97,49 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) {
       toast.error(language === 'ar' ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email');
       return;
     }
     
-    // Check if email exists
-    const users = JSON.parse(localStorage.getItem('montajak_users') || '[]');
-    const userExists = users.some((user: any) => user.email === resetEmail);
-    
-    if (!userExists) {
-      toast.error(language === 'ar' ? 'البريد الإلكتروني غير مسجل' : 'Email not registered');
-      return;
-    }
-    
     setIsResetting(true);
     
-    // Simulate password reset (In a real app, this would send an email)
-    setTimeout(() => {
-      setIsResetting(false);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
       toast.success(
         language === 'ar'
           ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني'
           : 'Password reset link sent to your email'
       );
       setShowResetForm(false);
-    }, 1500);
+    } catch (error) {
+      console.error("Password reset error:", error);
+      toast.error(
+        language === 'ar'
+          ? 'حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور'
+          : 'Error sending password reset link'
+      );
+    } finally {
+      setIsResetting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -211,11 +226,11 @@ const Login = () => {
                 <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {language === 'ar' ? 'البريد الإلكتروني أو رقم الهاتف' : 'Email or Phone'}
+                      {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
                     </label>
                     <Input
-                      type="text"
-                      placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني أو رقم الهاتف' : 'Enter your email or phone'}
+                      type="email"
+                      placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
@@ -266,12 +281,6 @@ const Login = () => {
                     >
                       {language === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                     </button>
-                  </div>
-                  
-                  <div className="text-center text-xs text-muted-foreground">
-                    {language === 'ar' 
-                      ? 'تجربة عملية: استخدم admin@example.com وكلمة المرور: password' 
-                      : 'Demo: Use admin@example.com and password: password'}
                   </div>
                 </form>
               </TabsContent>
