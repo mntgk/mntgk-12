@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Bookmark } from "lucide-react";
@@ -60,8 +61,6 @@ export function ProductCard({
       }
     };
 
-    // For now, keep likes count from props
-    // In the future this could be replaced with a real likes system
     checkIfFavorite();
   }, [id, isAuthenticated, user]);
 
@@ -108,6 +107,7 @@ export function ProductCard({
           
         if (error) throw error;
         toast.success(language === 'ar' ? 'تم إزالة المنتج من المفضلة' : 'Removed from favorites');
+        setIsSaved(false);
       } else {
         // Add to favorites
         const { error } = await supabase
@@ -119,9 +119,8 @@ export function ProductCard({
           
         if (error) throw error;
         toast.success(language === 'ar' ? 'تم حفظ المنتج في المفضلة' : 'Saved to favorites');
+        setIsSaved(true);
       }
-      
-      setIsSaved(!isSaved);
     } catch (error) {
       console.error("Error updating favorites:", error);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء تحديث المفضلة' : 'Error updating favorites');

@@ -70,12 +70,15 @@ export function ProductForm({ productId }: ProductFormProps) {
   }, [productId, user]);
 
   const categories = [
-    { value: "vehicles", label: language === 'ar' ? 'سيارات' : 'Vehicles' },
-    { value: "real-estate", label: language === 'ar' ? 'عقارات' : 'Real Estate' },
-    { value: "technology", label: language === 'ar' ? 'تقنية' : 'Technology' },
+    { value: "cars", label: language === 'ar' ? 'سيارات' : 'Cars' },
+    { value: "houses", label: language === 'ar' ? 'عقارات' : 'Houses' },
+    { value: "electronics", label: language === 'ar' ? 'إلكترونيات' : 'Electronics' },
     { value: "furniture", label: language === 'ar' ? 'أثاث' : 'Furniture' },
-    { value: "clothes", label: language === 'ar' ? 'ملابس' : 'Clothes' },
+    { value: "jobs", label: language === 'ar' ? 'وظائف' : 'Jobs' },
     { value: "services", label: language === 'ar' ? 'خدمات' : 'Services' },
+    { value: "fashion", label: language === 'ar' ? 'أزياء' : 'Fashion' },
+    { value: "games", label: language === 'ar' ? 'ألعاب' : 'Games' },
+    { value: "food", label: language === 'ar' ? 'طعام' : 'Food' },
     { value: "other", label: language === 'ar' ? 'أخرى' : 'Other' },
   ];
 
@@ -104,6 +107,12 @@ export function ProductForm({ productId }: ProductFormProps) {
     // Validation
     if (!title || !price || !selectedCategory || !selectedRegion || !description) {
       setError(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error(language === 'ar' ? 'يجب تسجيل الدخول لنشر إعلان' : 'You must be logged in to post an ad');
+      navigate('/login');
       return;
     }
 

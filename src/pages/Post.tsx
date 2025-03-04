@@ -25,6 +25,8 @@ const Post = () => {
 
   // If productId is set, load product data for editing
   useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    
     const params = new URLSearchParams(window.location.search);
     const id = params.get('edit');
     if (id) {
@@ -37,7 +39,7 @@ const Post = () => {
             .from('products')
             .select('*')
             .eq('id', id)
-            .eq('user_id', user?.id)
+            .eq('user_id', user.id)
             .single();
             
           if (error) {
@@ -52,7 +54,12 @@ const Post = () => {
       
       fetchProductData();
     }
-  }, [user]);
+  }, [user, isAuthenticated]);
+
+  // If not authenticated, show loading or redirect
+  if (!isAuthenticated) {
+    return null; // Will be redirected by the first useEffect
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
