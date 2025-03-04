@@ -35,6 +35,7 @@ export function useAuthState() {
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log("Auth state changed:", event, newSession);
       setSession(newSession);
       setUser(newSession?.user || null);
       
@@ -60,7 +61,8 @@ export function useAuthState() {
         .single();
 
       if (error) {
-        throw error;
+        console.error("Error fetching profile:", error);
+        return;
       }
 
       if (data) {

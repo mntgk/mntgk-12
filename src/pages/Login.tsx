@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight, LogIn, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register, isAuthenticated, loading } = useAuth();
   const { language } = useLanguage();
   
@@ -34,12 +35,19 @@ const Login = () => {
   const [showResetForm, setShowResetForm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
+  // Get the return URL from query parameters if available
+  const getReturnUrl = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('returnUrl') || '/';
+  };
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      navigate('/');
+      const returnUrl = getReturnUrl();
+      navigate(returnUrl);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, location.search]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +60,8 @@ const Login = () => {
     try {
       const success = await login(loginEmail, loginPassword);
       if (success) {
-        navigate('/');
+        const returnUrl = getReturnUrl();
+        navigate(returnUrl);
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -87,7 +96,8 @@ const Login = () => {
       const success = await register(registerName, registerEmail, registerPassword, registerPhone);
       if (success) {
         toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
-        navigate('/');
+        const returnUrl = getReturnUrl();
+        navigate(returnUrl);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -161,7 +171,7 @@ const Login = () => {
         <div className="w-full max-w-md space-y-8 bg-card p-6 rounded-xl border shadow-sm">
           <div className="text-center">
             <h1 className="text-2xl font-bold">
-              {language === 'ar' ? 'مرحباً بك في منتجك' : 'Welcome to Montajak'}
+              {language === 'ar' ? 'مرحباً بك في منتجك' : 'Welcome to Mntgk'}
             </h1>
             <p className="text-muted-foreground mt-2">
               {language === 'ar' 

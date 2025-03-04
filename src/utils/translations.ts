@@ -1,153 +1,66 @@
-
-type TranslationKey = 
-  | 'appName'
-  | 'home'
-  | 'search'
-  | 'post'
-  | 'favorites'
-  | 'profile'
-  | 'searchPlaceholder'
-  | 'featuredListings'
-  | 'recentListings'
-  | 'viewAll'
-  | 'chooseRegion'
-  | 'contactUs'
-  | 'notifications'
-  | 'addStory'
-  | 'popularSearches'
-  | 'warningMessage'
-  | 'share'
-  | 'report'
-  | 'likes'
-  | 'contactSeller'
-  | 'description'
-  | 'sellerInfo'
-  | 'sellerRating'
-  | 'location'
-  | 'price'
-  | 'category'
-  | 'categories'
-  | 'regions'
-  | 'postAd'
-  | 'editAd'
-  | 'adTitle'
-  | 'adImages'
-  | 'currency'
-  | 'condition'
-  | 'new'
-  | 'used'
-  | 'selectCategory'
-  | 'selectRegion'
-  | 'notificationPreferences';
-
-export const translations: Record<'ar' | 'en', Record<TranslationKey, string>> = {
-  ar: {
-    appName: 'منتجك',
-    home: 'الرئيسية',
-    search: 'بحث',
-    post: 'إضافة إعلان',
-    favorites: 'المفضلة',
-    profile: 'حسابي',
-    searchPlaceholder: 'ابحث عن منتجات...',
-    featuredListings: 'الإعلانات المميزة',
-    recentListings: 'أحدث الإعلانات',
-    viewAll: 'عرض الكل',
-    chooseRegion: 'اختر المنطقة',
-    contactUs: 'تواصل معنا',
-    notifications: 'الإشعارات',
-    addStory: 'أضف قصتك',
-    popularSearches: 'عمليات البحث الشائعة',
-    warningMessage: 'تحذير: يفضل إجراء التعاملات في أماكن عامة وآمنة. منصة منتجك غير مسؤولة عن أي مخاطر قد يتعرض لها البائع أو المشتري.',
-    share: 'مشاركة',
-    report: 'الإبلاغ عن هذا الإعلان',
-    likes: 'إعجابات',
-    contactSeller: 'التواصل مع البائع',
-    description: 'الوصف',
-    sellerInfo: 'معلومات البائع',
-    sellerRating: 'تقييم البائع',
-    location: 'الموقع',
-    price: 'السعر',
-    category: 'الفئة',
-    categories: 'الفئات',
-    regions: 'المناطق',
-    postAd: 'نشر إعلان جديد',
-    editAd: 'تعديل الإعلان',
-    adTitle: 'عنوان الإعلان',
-    adImages: 'صور الإعلان',
-    currency: 'العملة',
-    condition: 'الحالة',
-    new: 'جديد',
-    used: 'مستعمل',
-    selectCategory: 'اختر فئة',
-    selectRegion: 'اختر منطقة',
-    notificationPreferences: 'تفضيلات الإشعارات'
-  },
+export const translations = {
   en: {
-    appName: 'Your Product',
     home: 'Home',
     search: 'Search',
-    post: 'Post Ad',
+    post: 'Post',
     favorites: 'Favorites',
-    profile: 'My Account',
-    searchPlaceholder: 'Search for products...',
-    featuredListings: 'Featured Listings',
-    recentListings: 'Recent Listings',
-    viewAll: 'View All',
-    chooseRegion: 'Choose Region',
-    contactUs: 'Contact Us',
-    notifications: 'Notifications',
-    addStory: 'Add Your Story',
-    popularSearches: 'Popular Searches',
-    warningMessage: 'Warning: Transactions should be conducted in public and safe places. Your Product platform is not responsible for any risks that the seller or buyer may be exposed to.',
-    share: 'Share',
-    report: 'Report this listing',
-    likes: 'Likes',
-    contactSeller: 'Contact Seller',
-    description: 'Description',
-    sellerInfo: 'Seller Information',
-    sellerRating: 'Seller Rating',
+    profile: 'Profile',
+    settings: 'Settings',
+    auth_required_message: 'You must be logged in to access this feature',
+    login: 'Login',
+    register: 'Register',
+    logout: 'Logout',
+    email: 'Email',
+    password: 'Password',
+    full_name: 'Full Name',
+    phone: 'Phone',
+    username: 'Username',
     location: 'Location',
-    price: 'Price',
-    category: 'Category',
-    categories: 'Categories',
-    regions: 'Regions',
-    postAd: 'Post a New Ad',
-    editAd: 'Edit Ad',
-    adTitle: 'Ad Title',
-    adImages: 'Ad Images',
-    currency: 'Currency',
-    condition: 'Condition',
-    new: 'New',
-    used: 'Used',
-    selectCategory: 'Select a category',
-    selectRegion: 'Select a region',
-    notificationPreferences: 'Notification Preferences'
-  }
-};
-
-export const regionTranslations: Record<string, { ar: string; en: string }> = {
-  'دمشق': { ar: 'دمشق', en: 'Damascus' },
-  'حلب': { ar: 'حلب', en: 'Aleppo' },
-  'حمص': { ar: 'حمص', en: 'Homs' },
-  'حماه': { ar: 'حماه', en: 'Hama' },
-  'اللاذقية': { ar: 'اللاذقية', en: 'Latakia' },
-  'طرطوس': { ar: 'طرطوس', en: 'Tartus' },
-  'درعا': { ar: 'درعا', en: 'Daraa' },
-  'السويداء': { ar: 'السويداء', en: 'Suwayda' },
-  'القنيطرة': { ar: 'القنيطرة', en: 'Quneitra' },
-  'ريف دمشق': { ar: 'ريف دمشق', en: 'Rural Damascus' }
-};
-
-export const categoryTranslations: Record<string, { ar: string; en: string }> = {
-  'سيارات': { ar: 'سيارات', en: 'Vehicles' },
-  'عقارات': { ar: 'عقارات', en: 'Real Estate' },
-  'تقنية': { ar: 'تقنية', en: 'Technology' },
-  'خدمات': { ar: 'خدمات', en: 'Services' },
-  'أثاث': { ar: 'أثاث', en: 'Furniture' },
-  'ملابس': { ar: 'ملابس', en: 'Clothing' },
-  'أجهزة منزلية': { ar: 'أجهزة منزلية', en: 'Home Appliances' },
-  'طعام': { ar: 'طعام', en: 'Food' },
-  'ألعاب': { ar: 'ألعاب', en: 'Games' },
-  'وظائف': { ar: 'وظائف', en: 'Jobs' },
-  'يدويات': { ar: 'يدويات', en: 'Handmade' }
+    save_changes: 'Save Changes',
+    cancel: 'Cancel',
+    edit_profile: 'Edit Profile',
+    delete: 'Delete',
+    confirm: 'Confirm',
+    edit: 'Edit',
+    back: 'Back',
+    next: 'Next',
+    submit: 'Submit',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    warning: 'Warning',
+    info: 'Info',
+  },
+  ar: {
+    home: 'الرئيسية',
+    search: 'البحث',
+    post: 'إضافة',
+    favorites: 'المفضلة',
+    profile: 'حسابي',
+    settings: 'الإعدادات',
+    auth_required_message: 'يجب تسجيل الدخول للوصول إلى هذه الميزة',
+    login: 'تسجيل الدخول',
+    register: 'التسجيل',
+    logout: 'تسجيل الخروج',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    full_name: 'الاسم الكامل',
+    phone: 'الهاتف',
+    username: 'اسم المستخدم',
+    location: 'الموقع',
+    save_changes: 'حفظ التغييرات',
+    cancel: 'إلغاء',
+    edit_profile: 'تعديل الملف الشخصي',
+    delete: 'حذف',
+    confirm: 'تأكيد',
+    edit: 'تعديل',
+    back: 'رجوع',
+    next: 'التالي',
+    submit: 'إرسال',
+    loading: 'جاري التحميل...',
+    error: 'خطأ',
+    success: 'نجاح',
+    warning: 'تحذير',
+    info: 'معلومات',
+  },
 };

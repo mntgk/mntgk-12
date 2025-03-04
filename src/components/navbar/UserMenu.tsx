@@ -18,17 +18,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
 export function UserMenu() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
-    if (path === '/profile' || path === '/my-products' || path === '/post') {
-      if (!user) {
-        toast.error(language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'You must be logged in first');
-        navigate('/login');
-        return;
-      }
+    if (!isAuthenticated) {
+      toast.error(language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'You must be logged in first');
+      navigate('/login');
+      return;
     }
     navigate(path);
   };
@@ -74,7 +72,7 @@ export function UserMenu() {
           <span>{language === 'ar' ? 'الإعدادات' : 'Settings'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {user ? (
+        {isAuthenticated ? (
           <DropdownMenuItem onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</span>

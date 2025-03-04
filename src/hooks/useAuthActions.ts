@@ -15,6 +15,7 @@ export function useAuthActions(setUser: SetUserFunction) {
   // Login with email and password
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -26,8 +27,30 @@ export function useAuthActions(setUser: SetUserFunction) {
         return false;
       }
 
+      console.log("Login successful, user:", data.user);
       if (data.user) {
         toast.success(language === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Logged in successfully');
+        
+        // Fetch user profile immediately after login
+        if (data.user.id) {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.user.id)
+              .single();
+            
+            if (!profileError && profileData) {
+              setUser(prevUser => {
+                if (!prevUser) return data.user;
+                return { ...prevUser, profile: profileData as Profile };
+              });
+            }
+          } catch (profileFetchError) {
+            console.error("Error fetching profile after login:", profileFetchError);
+          }
+        }
+        
         return true;
       }
 
@@ -42,6 +65,7 @@ export function useAuthActions(setUser: SetUserFunction) {
   // Register new user
   const register = async (name: string, email: string, password: string, phone?: string): Promise<boolean> => {
     try {
+      console.log("Attempting registration with:", email, name);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -59,6 +83,7 @@ export function useAuthActions(setUser: SetUserFunction) {
         return false;
       }
 
+      console.log("Registration successful, user:", data.user);
       if (data.user) {
         toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully');
         return true;
@@ -81,6 +106,9 @@ export function useAuthActions(setUser: SetUserFunction) {
         throw error;
       }
       
+      // Clear user state explicitly
+      setUser(null);
+      
       toast.success(language === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully');
       navigate('/');
     } catch (error) {
@@ -99,6 +127,7 @@ export function useAuthActions(setUser: SetUserFunction) {
         return false;
       }
 
+      console.log("Updating profile for user:", user.id, "with data:", profileData);
       const { error } = await supabase
         .from('profiles')
         .update(profileData)
@@ -110,17 +139,25 @@ export function useAuthActions(setUser: SetUserFunction) {
         return false;
       }
 
-      // Update the local user state with the new profile data
-      setUser(prevUser => {
-        if (!prevUser) return null;
-        return {
-          ...prevUser,
-          profile: {
-            ...prevUser.profile,
-            ...profileData
-          } as Profile
-        };
-      });
+      // Fetch the updated profile to ensure state is current
+      const { data: updatedProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (fetchError) {
+        console.error("Error fetching updated profile:", fetchError);
+      } else if (updatedProfile) {
+        // Update the local user state with the freshly fetched profile data
+        setUser(prevUser => {
+          if (!prevUser) return null;
+          return {
+            ...prevUser,
+            profile: updatedProfile as Profile
+          };
+        });
+      }
 
       toast.success(language === 'ar' ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully');
       return true;

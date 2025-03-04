@@ -3,6 +3,7 @@ import { Home, Search, Plus, Heart, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function BottomNav() {
   const location = useLocation();
@@ -11,17 +12,13 @@ export function BottomNav() {
   const { isAuthenticated } = useAuth();
   const path = location.pathname;
 
-  const handleProfileClick = (e: React.MouseEvent) => {
+  const handleAuthRequiredClick = (e: React.MouseEvent, targetPath: string) => {
     if (!isAuthenticated) {
       e.preventDefault();
+      toast.error(t('auth_required_message'));
       navigate('/login');
-    }
-  };
-
-  const handlePostClick = (e: React.MouseEvent) => {
-    if (!isAuthenticated) {
-      e.preventDefault();
-      navigate('/login');
+    } else {
+      navigate(targetPath);
     }
   };
 
@@ -36,7 +33,11 @@ export function BottomNav() {
           <Search className="h-5 w-5" />
           <span className="text-xs mt-1">{t('search')}</span>
         </Link>
-        <Link to="/post" className="relative flex-1 -mt-5" onClick={handlePostClick}>
+        <Link 
+          to="/post" 
+          className="relative flex-1 -mt-5" 
+          onClick={(e) => handleAuthRequiredClick(e, '/post')}
+        >
           <div className="absolute left-1/2 -translate-x-1/2 h-12 w-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg">
             <Plus className="h-6 w-6" />
           </div>
@@ -48,7 +49,7 @@ export function BottomNav() {
         <Link 
           to="/profile" 
           className={`bottom-nav-item ${path.startsWith('/profile') ? 'active' : ''}`}
-          onClick={handleProfileClick}
+          onClick={(e) => handleAuthRequiredClick(e, '/profile')}
         >
           <User className="h-5 w-5" />
           <span className="text-xs mt-1">{t('profile')}</span>
