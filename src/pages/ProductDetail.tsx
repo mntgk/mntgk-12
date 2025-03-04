@@ -1,14 +1,16 @@
-
-import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { MapPin, Share2, Flag, Clock, MessageSquare, ChevronLeft, Bookmark } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CommentSection } from "@/components/CommentSection";
-import { toast } from "sonner";
+import { ProductImages } from "@/components/product/ProductImages";
+import { ProductHeader } from "@/components/product/ProductHeader";
+import { ProductTabs } from "@/components/product/ProductTabs";
+import { SellerInfo } from "@/components/product/SellerInfo";
+import { SafetyTips } from "@/components/product/SafetyTips";
+import { SimilarProducts } from "@/components/product/SimilarProducts";
 
 // Example product data
 const productData = {
@@ -161,8 +163,6 @@ const productData = {
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { language } = useLanguage();
-  const [activeImage, setActiveImage] = useState(0);
-  const [isSaved, setIsSaved] = useState(false);
 
   // If productId doesn't exist in our data
   if (!productId || !productData[productId as keyof typeof productData]) {
@@ -209,38 +209,6 @@ const ProductDetail = () => {
     day: 'numeric'
   }).format(listedDate);
 
-  const handleSaveAd = () => {
-    setIsSaved(!isSaved);
-    if (!isSaved) {
-      toast.success(language === 'ar' 
-        ? 'تم حفظ الإعلان في المفضلة' 
-        : 'Ad saved to favorites');
-    } else {
-      toast.success(language === 'ar' 
-        ? 'تم إزالة الإعلان من المفضلة' 
-        : 'Ad removed from favorites');
-    }
-  };
-
-  const handleShareAd = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success(language === 'ar' 
-      ? 'تم نسخ رابط الإعلان' 
-      : 'Ad link copied to clipboard');
-  };
-
-  const handleReportAd = () => {
-    toast.success(language === 'ar' 
-      ? 'تم الإبلاغ عن الإعلان' 
-      : 'Ad reported');
-  };
-
-  const handleContactSeller = () => {
-    toast.success(language === 'ar'
-      ? 'تم إرسال رسالة إلى البائع'
-      : 'Message sent to seller');
-  };
-
   return (
     <div className="min-h-screen bg-background pb-20">
       <Navbar />
@@ -258,108 +226,22 @@ const ProductDetail = () => {
           {/* Product images and details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Product images gallery */}
-            <div className="overflow-hidden rounded-xl border">
-              <div className="aspect-video relative">
-                <img 
-                  src={product.images[activeImage]} 
-                  alt={title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Thumbnails */}
-              {product.images.length > 1 && (
-                <div className="flex p-2 gap-2 overflow-x-auto">
-                  {product.images.map((image, index) => (
-                    <button 
-                      key={index}
-                      className={`flex-shrink-0 w-20 h-16 border-2 rounded overflow-hidden ${
-                        index === activeImage ? 'border-primary' : 'border-transparent'
-                      }`}
-                      onClick={() => setActiveImage(index)}
-                    >
-                      <img 
-                        src={image} 
-                        alt={`${title} - صورة ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ProductImages images={product.images} title={title} />
             
             {/* Product main info */}
-            <div>
-              <div className="flex justify-between items-start">
-                <h1 className="text-2xl font-bold">{title}</h1>
-                <span className="text-2xl font-bold text-primary">
-                  {product.price.toLocaleString()} {language === 'ar' ? 'ل.س' : 'SYP'}
-                </span>
-              </div>
-              
-              <div className="flex items-center text-muted-foreground mt-2 mb-4">
-                <MapPin className="h-4 w-4 mr-1" />
-                <span className="text-sm">{location}</span>
-                <span className="mx-2">•</span>
-                <span className="text-sm">{category}</span>
-                <span className="mx-2">•</span>
-                <Clock className="h-4 w-4 mr-1" />
-                <span className="text-sm">{formattedDate}</span>
-              </div>
-              
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  variant={isSaved ? "default" : "outline"} 
-                  size="sm"
-                  onClick={handleSaveAd}
-                >
-                  <Bookmark className={`h-4 w-4 ml-1 ${isSaved ? 'fill-primary-foreground' : ''}`} />
-                  <span>
-                    {language === 'ar' 
-                      ? (isSaved ? 'محفوظ' : 'حفظ الإعلان') 
-                      : (isSaved ? 'Saved' : 'Save Ad')}
-                  </span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleShareAd}>
-                  <Share2 className="h-4 w-4 ml-1" />
-                  <span>{language === 'ar' ? 'مشاركة' : 'Share'}</span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleReportAd}>
-                  <Flag className="h-4 w-4 ml-1" />
-                  <span>{language === 'ar' ? 'إبلاغ' : 'Report'}</span>
-                </Button>
-              </div>
-            </div>
+            <ProductHeader 
+              title={title}
+              price={product.price}
+              location={location}
+              category={category}
+              formattedDate={formattedDate}
+            />
             
             {/* Tabs for Description and Specifications */}
-            <Tabs defaultValue="description">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="description">
-                  {language === 'ar' ? 'الوصف' : 'Description'}
-                </TabsTrigger>
-                <TabsTrigger value="specifications">
-                  {language === 'ar' ? 'المواصفات' : 'Specifications'}
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="description" className="mt-4">
-                <div className="prose max-w-none dark:prose-invert">
-                  <p>{description}</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="specifications" className="mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {specifications.map((spec, index) => (
-                    <div key={index} className="flex justify-between p-3 border rounded-lg">
-                      <span className="text-muted-foreground">{spec.name}</span>
-                      <span className="font-medium">{spec.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+            <ProductTabs 
+              description={description}
+              specifications={specifications}
+            />
             
             {/* Comments section */}
             <div className="mt-8 border-t pt-6">
@@ -369,138 +251,20 @@ const ProductDetail = () => {
           
           {/* Seller info and contact */}
           <div className="space-y-6">
-            <div className="border rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">
-                {language === 'ar' ? 'معلومات البائع' : 'Seller Information'}
-              </h3>
-              
-              <div className="flex items-center mb-4">
-                <img 
-                  src={product.seller.image} 
-                  alt={product.seller.name}
-                  className="w-12 h-12 rounded-full object-cover mr-3"
-                />
-                <div>
-                  <p className="font-medium flex items-center">
-                    {product.seller.name}
-                    {product.seller.isVerified && (
-                      <span className="ml-1 bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">
-                        {language === 'ar' ? 'موثق' : 'Verified'}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'ar' 
-                      ? `عضو منذ ${product.seller.memberSince}` 
-                      : `Member since ${product.seller.memberSince}`}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-sm mb-4">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-muted-foreground">
-                    {language === 'ar' ? 'معدل الاستجابة' : 'Response Rate'}:
-                  </span>
-                  <span className="font-medium">{product.seller.responseRate}%</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-muted-foreground">
-                    {language === 'ar' ? 'مشاهدات الإعلان' : 'Ad Views'}:
-                  </span>
-                  <span className="font-medium">{product.views}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-muted-foreground">
-                    {language === 'ar' ? 'الحالة' : 'Status'}:
-                  </span>
-                  <span className="font-medium text-green-600">
-                    {language === 'ar' ? 'متاح' : 'Available'}
-                  </span>
-                </div>
-              </div>
-              
-              <Button className="w-full" onClick={handleContactSeller}>
-                <MessageSquare className="h-4 w-4 ml-2" />
-                <span>{language === 'ar' ? 'تواصل مع البائع' : 'Contact Seller'}</span>
-              </Button>
-            </div>
+            <SellerInfo 
+              seller={product.seller}
+              views={product.views}
+              status={product.status}
+            />
             
             {/* Safety tips */}
-            <div className="border rounded-xl p-6 bg-muted/50">
-              <h3 className="text-lg font-semibold mb-4">
-                {language === 'ar' ? 'نصائح للتسوق الآمن' : 'Safety Tips'}
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  {language === 'ar' 
-                    ? 'تفقد المنتج شخصياً قبل الشراء' 
-                    : 'Inspect the item in person before purchasing'}
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  {language === 'ar' 
-                    ? 'اطلب إيصالاً أو ضماناً للمنتج' 
-                    : 'Request a receipt or warranty for the product'}
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  {language === 'ar' 
-                    ? 'لا ترسل المال مقدماً دون التحقق' 
-                    : 'Do not send money in advance without verification'}
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  {language === 'ar' 
-                    ? 'قابل البائع في مكان عام آمن' 
-                    : 'Meet the seller in a safe public place'}
-                </li>
-              </ul>
-            </div>
+            <SafetyTips />
             
             {/* Similar ads */}
-            <div className="border rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">
-                {language === 'ar' ? 'إعلانات مشابهة' : 'Similar Ads'}
-              </h3>
-              <div className="space-y-4">
-                {Object.values(productData)
-                  .filter(p => p.id !== productId && p.category === product.category)
-                  .slice(0, 2)
-                  .map(similarProduct => (
-                    <Link 
-                      key={similarProduct.id} 
-                      to={`/product/${similarProduct.id}`} 
-                      className="block"
-                    >
-                      <div className="flex border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                        <div className="w-1/3">
-                          <img 
-                            src={similarProduct.images[0]} 
-                            alt={similarProduct.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="p-3 flex-1">
-                          <h4 className="font-medium text-sm line-clamp-2">
-                            {language === 'ar' ? similarProduct.title : (similarProduct.enTitle || similarProduct.title)}
-                          </h4>
-                          <p className="text-primary font-semibold mt-1">
-                            {similarProduct.price.toLocaleString()} {language === 'ar' ? 'ل.س' : 'SYP'}
-                          </p>
-                          <div className="flex items-center mt-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span>
-                              {language === 'ar' ? similarProduct.location : (similarProduct.enLocation || similarProduct.location)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-              </div>
-            </div>
+            <SimilarProducts 
+              products={Object.values(productData)}
+              currentProductId={productId}
+            />
           </div>
         </div>
       </main>

@@ -1,6 +1,8 @@
 
 import { Bell } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function EmptyState() {
   const { language } = useLanguage();
@@ -16,6 +18,11 @@ export function EmptyState() {
           ? 'سيتم إعلامك هنا عند وجود إشعارات جديدة' 
           : 'You will be notified here when there are new notifications'}
       </p>
+      <Link to="/">
+        <Button className="mt-6">
+          {language === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+        </Button>
+      </Link>
     </div>
   );
 }
