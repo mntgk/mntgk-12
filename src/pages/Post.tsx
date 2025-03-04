@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Post = () => {
   const [productId, setProductId] = useState<string | null>(null);
+  const [productData, setProductData] = useState<any>(null);
   const { language } = useLanguage();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +46,11 @@ const Post = () => {
           if (error) {
             toast.error(language === 'ar' ? 'لم يتم العثور على المنتج' : 'Product not found');
             navigate('/profile');
+            return;
+          }
+          
+          if (data) {
+            setProductData(data);
           }
         } catch (error) {
           console.error("Error fetching product:", error);
@@ -54,7 +60,7 @@ const Post = () => {
       
       fetchProductData();
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, navigate, language]);
 
   // If not authenticated, show loading or redirect
   if (!isAuthenticated) {
@@ -73,7 +79,18 @@ const Post = () => {
               : (language === 'ar' ? 'نشر إعلان جديد' : 'Post a New Ad')
             }
           </h1>
-          <ProductForm productId={productId} />
+          <ProductForm 
+            productId={productId} 
+            initialData={productData}
+            onSuccess={(id) => {
+              if (productId) {
+                toast.success(language === 'ar' ? 'تم تحديث الإعلان بنجاح' : 'Ad updated successfully');
+              } else {
+                toast.success(language === 'ar' ? 'تم نشر الإعلان بنجاح' : 'Ad posted successfully');
+              }
+              navigate(`/product/${id}`);
+            }}
+          />
         </div>
       </main>
 

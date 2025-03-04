@@ -1,6 +1,5 @@
 
 import { useState, useEffect, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,12 +14,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface ProductFormProps {
   productId: string | null;
+  initialData?: any;
+  onSuccess?: (id: string) => void;
 }
 
-export function ProductForm({ productId }: ProductFormProps) {
+export function ProductForm({ productId, initialData, onSuccess }: ProductFormProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
-  const navigate = useNavigate();
   
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -33,9 +33,19 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load existing product data if editing
+  // Load initial data if provided or existing product data if editing
   useEffect(() => {
-    if (productId && user?.id) {
+    if (initialData) {
+      setTitle(initialData.title || "");
+      setPrice(initialData.price?.toString() || "");
+      setCurrency(initialData.currency || 'SYP');
+      setDescription(initialData.description || "");
+      setSelectedCategory(initialData.category || "");
+      setSelectedRegion(initialData.location || "");
+      setCondition(initialData.condition || "new");
+      setImages(initialData.images || []);
+    } else if (productId && user?.id) {
+      // If initialData wasn't provided but productId exists, fetch the data
       const fetchProductData = async () => {
         try {
           const { data, error } = await supabase
@@ -50,7 +60,7 @@ export function ProductForm({ productId }: ProductFormProps) {
           }
           
           if (data) {
-            setTitle(data.title);
+            setTitle(data.title || "");
             setPrice(data.price?.toString() || "");
             setCurrency(data.currency || 'SYP');
             setDescription(data.description || "");
@@ -67,7 +77,7 @@ export function ProductForm({ productId }: ProductFormProps) {
       
       fetchProductData();
     }
-  }, [productId, user]);
+  }, [productId, initialData, user?.id, language]);
 
   const categories = [
     { value: "cars", label: language === 'ar' ? 'سيارات' : 'Cars' },
@@ -112,11 +122,11 @@ export function ProductForm({ productId }: ProductFormProps) {
 
     if (!user?.id) {
       toast.error(language === 'ar' ? 'يجب تسجيل الدخول لنشر إعلان' : 'You must be logged in to post an ad');
-      navigate('/login');
       return;
     }
 
     setIsLoading(true);
+    setError('');
 
     // Get a random image if none provided
     const productImages = images.length > 0 
@@ -124,9 +134,11 @@ export function ProductForm({ productId }: ProductFormProps) {
       : [`https://source.unsplash.com/random/300x300?product&sig=${Date.now()}`];
 
     try {
+      let productResult;
+      
       if (productId) {
         // Update existing product in Supabase
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
           .update({
             title,
@@ -137,14 +149,16 @@ export function ProductForm({ productId }: ProductFormProps) {
             location: selectedRegion,
             condition,
             images: productImages,
+            is_active: true
           })
           .eq('id', productId)
-          .eq('user_id', user?.id);
+          .eq('user_id', user?.id)
+          .select('id')
+          .single();
           
         if (error) throw error;
         
-        toast.success(language === 'ar' ? 'تم تحديث الإعلان بنجاح' : 'Ad updated successfully');
-        navigate(`/product/${productId}`);
+        productResult = data;
       } else {
         // Insert new product in Supabase
         const { data, error } = await supabase
@@ -159,14 +173,18 @@ export function ProductForm({ productId }: ProductFormProps) {
             condition,
             images: productImages,
             user_id: user?.id,
+            is_active: true
           })
           .select('id')
           .single();
           
         if (error) throw error;
         
-        toast.success(language === 'ar' ? 'تم نشر الإعلان بنجاح' : 'Ad posted successfully');
-        navigate(`/product/${data.id}`);
+        productResult = data;
+      }
+      
+      if (onSuccess && productResult) {
+        onSuccess(productResult.id);
       }
     } catch (error) {
       console.error("Error saving product:", error);
@@ -230,7 +248,12 @@ export function ProductForm({ productId }: ProductFormProps) {
       </div>
       <div>
         <Label>{language === 'ar' ? 'الحالة' : 'Condition'}</Label>
-        <RadioGroup defaultValue={condition} className="flex gap-4" onValueChange={setCondition}>
+        <RadioGroup 
+          value={condition} 
+          className="flex gap-4" 
+          onValueChange={setCondition}
+          defaultValue={condition}
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="new" id="r1" />
             <Label htmlFor="r1">{language === 'ar' ? 'جديد' : 'New'}</Label>

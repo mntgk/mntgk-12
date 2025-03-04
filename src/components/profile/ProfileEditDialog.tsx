@@ -26,6 +26,7 @@ interface ProfileEditDialogProps {
   setEditLocation: (location: string) => void;
   editAvatar: string;
   setEditAvatar: (avatar: string) => void;
+  onProfileUpdated?: () => void;
 }
 
 const ProfileEditDialog = ({
@@ -38,11 +39,13 @@ const ProfileEditDialog = ({
   editLocation,
   setEditLocation,
   editAvatar,
-  setEditAvatar
+  setEditAvatar,
+  onProfileUpdated
 }: ProfileEditDialogProps) => {
   const { language } = useLanguage();
   const { updateProfile, user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -103,14 +106,25 @@ const ProfileEditDialog = ({
     }
   };
 
-  const handleSaveProfile = () => {
-    updateProfile({
-      full_name: editName,
-      username: editUsername,
-      location: editLocation,
-      avatar: editAvatar
-    });
-    setIsOpen(false);
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const success = await updateProfile({
+        full_name: editName,
+        username: editUsername,
+        location: editLocation,
+        avatar: editAvatar
+      });
+      
+      if (success) {
+        setIsOpen(false);
+        if (onProfileUpdated) {
+          onProfileUpdated();
+        }
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -209,9 +223,11 @@ const ProfileEditDialog = ({
             />
           </div>
           
-          <Button onClick={handleSaveProfile} className="w-full mt-4">
+          <Button onClick={handleSaveProfile} className="w-full mt-4" disabled={saving}>
             <Save className="h-4 w-4 ml-2" />
-            {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+            {saving 
+              ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') 
+              : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
           </Button>
         </div>
       </DialogContent>
