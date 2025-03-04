@@ -20,6 +20,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Featured from "./pages/Featured";
 import Latest from "./pages/Latest";
 import Login from "./pages/Login";
+import MyProducts from "./pages/MyProducts";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/featured" element={<Featured />} />
                 <Route path="/latest" element={<Latest />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/my-products" element={<MyProducts />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

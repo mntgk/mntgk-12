@@ -15,7 +15,7 @@ export function LogoLink() {
         className={`h-8 ${theme === 'dark' ? 'brightness-150 contrast-150 invert' : ''}`}
       />
       <span className="text-xl font-bold hidden md:inline-block">
-        {language === 'ar' ? 'منتجك' : 'Montajak'}
+        {language === 'ar' ? 'منتجك' : 'Mntgk'}
       </span>
     </Link>
   );

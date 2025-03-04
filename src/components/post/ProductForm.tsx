@@ -1,5 +1,5 @@
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ImageUploader } from "./ImageUploader";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductFormProps {
   productId: string | null;
@@ -33,24 +34,40 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Load existing product data if editing
-  useState(() => {
+  useEffect(() => {
     if (productId && user?.id) {
-      // Get products from localStorage
-      const products = JSON.parse(localStorage.getItem('montajak_products') || '[]');
-      const product = products.find((p: any) => p.id === productId && p.userId === user?.id);
+      const fetchProductData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .eq('user_id', user.id)
+            .single();
+            
+          if (error) {
+            throw error;
+          }
+          
+          if (data) {
+            setTitle(data.title);
+            setPrice(data.price?.toString() || "");
+            setCurrency(data.currency || 'SYP');
+            setDescription(data.description || "");
+            setSelectedCategory(data.category || "");
+            setSelectedRegion(data.location || "");
+            setCondition(data.condition || "new");
+            setImages(data.images || []);
+          }
+        } catch (error) {
+          console.error("Error fetching product:", error);
+          toast.error(language === 'ar' ? 'حدث خطأ أثناء تحميل بيانات المنتج' : 'Error loading product data');
+        }
+      };
       
-      if (product) {
-        setTitle(product.title);
-        setPrice(product.price.toString());
-        setCurrency(product.currency || 'SYP');
-        setDescription(product.description);
-        setSelectedCategory(product.category);
-        setSelectedRegion(product.region);
-        setCondition(product.condition);
-        setImages(product.images || []);
-      }
+      fetchProductData();
     }
-  });
+  }, [productId, user]);
 
   const categories = [
     { value: "vehicles", label: language === 'ar' ? 'سيارات' : 'Vehicles' },
@@ -82,7 +99,7 @@ export function ProductForm({ productId }: ProductFormProps) {
     { value: "USD", label: language === 'ar' ? 'دولار أمريكي' : 'US Dollar' },
   ];
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     // Validation
     if (!title || !price || !selectedCategory || !selectedRegion || !description) {
@@ -97,74 +114,57 @@ export function ProductForm({ productId }: ProductFormProps) {
       ? images 
       : [`https://source.unsplash.com/random/300x300?product&sig=${Date.now()}`];
 
-    // Create or update product
-    let product;
-    
-    if (productId) {
-      // Update existing product
-      const products = JSON.parse(localStorage.getItem('montajak_products') || '[]');
-      const updatedProducts = products.map((p: any) => {
-        if (p.id === productId && p.userId === user?.id) {
-          return {
-            ...p,
+    try {
+      if (productId) {
+        // Update existing product in Supabase
+        const { error } = await supabase
+          .from('products')
+          .update({
             title,
             price: Number(price),
             currency,
             description,
             category: selectedCategory,
-            region: selectedRegion,
+            location: selectedRegion,
             condition,
             images: productImages,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return p;
-      });
-      
-      localStorage.setItem('montajak_products', JSON.stringify(updatedProducts));
-      product = updatedProducts.find((p: any) => p.id === productId);
-      
-    } else {
-      // Create a new product
-      product = {
-        id: Math.random().toString(36).substr(2, 9),
-        title,
-        price: Number(price),
-        currency,
-        description,
-        category: selectedCategory,
-        region: selectedRegion,
-        condition,
-        images: productImages,
-        userId: user?.id,
-        userName: user?.profile?.full_name,
-        userAvatar: user?.profile?.avatar,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        views: 0,
-      };
-
-      // Get existing products or initialize an empty array
-      const existingProducts = JSON.parse(localStorage.getItem('montajak_products') || '[]');
-      
-      // Add new product to array
-      existingProducts.push(product);
-      
-      // Save updated products array back to localStorage
-      localStorage.setItem('montajak_products', JSON.stringify(existingProducts));
-    }
-    
-    setTimeout(() => {
+          })
+          .eq('id', productId)
+          .eq('user_id', user?.id);
+          
+        if (error) throw error;
+        
+        toast.success(language === 'ar' ? 'تم تحديث الإعلان بنجاح' : 'Ad updated successfully');
+        navigate(`/product/${productId}`);
+      } else {
+        // Insert new product in Supabase
+        const { data, error } = await supabase
+          .from('products')
+          .insert({
+            title,
+            price: Number(price),
+            currency,
+            description,
+            category: selectedCategory,
+            location: selectedRegion,
+            condition,
+            images: productImages,
+            user_id: user?.id,
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        
+        toast.success(language === 'ar' ? 'تم نشر الإعلان بنجاح' : 'Ad posted successfully');
+        navigate(`/product/${data.id}`);
+      }
+    } catch (error) {
+      console.error("Error saving product:", error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء حفظ المنتج' : 'Error saving product');
+    } finally {
       setIsLoading(false);
-      toast.success(
-        productId
-          ? (language === 'ar' ? 'تم تحديث الإعلان بنجاح' : 'Ad updated successfully')
-          : (language === 'ar' ? 'تم نشر الإعلان بنجاح' : 'Ad posted successfully')
-      );
-      
-      // Redirect to product detail page
-      navigate(`/product/${product.id}`);
-    }, 1000);
+    }
   };
 
   return (
