@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
@@ -6,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CommentSection } from "@/components/CommentSection";
+import { CommentSection } from "@/components/comments/CommentSection";
 import { ProductImages } from "@/components/product/ProductImages";
 import { ProductHeader } from "@/components/product/ProductHeader";
 import { ProductTabs } from "@/components/product/ProductTabs";
