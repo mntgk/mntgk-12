@@ -7,12 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Example comment data structure
 interface Comment {
   id: string;
   text: string;
-  createdAt: Date;
+  created_at: string;
   author: {
     name: string;
     avatar: string;
@@ -24,13 +24,58 @@ interface CommentSectionProps {
   initialComments?: Comment[];
 }
 
-export function CommentSection({ productId, initialComments = [] }: CommentSectionProps) {
-  const [comments, setComments] = useState<Comment[]>(initialComments);
+export function CommentSection({ productId }: CommentSectionProps) {
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const { language } = useLanguage();
   const { isAuthenticated, user } = useAuth();
 
-  const handleSubmitComment = () => {
+  // Fetch comments for this product
+  useEffect(() => {
+    const fetchComments = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('comments')
+          .select(`
+            id,
+            text,
+            created_at,
+            user_id,
+            profiles(full_name, avatar)
+          `)
+          .eq('product_id', productId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching comments:", error);
+          return;
+        }
+        
+        if (data) {
+          const formattedComments = data.map(comment => ({
+            id: comment.id,
+            text: comment.text,
+            created_at: comment.created_at,
+            author: {
+              name: comment.profiles?.full_name || 'User',
+              avatar: comment.profiles?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff",
+            }
+          }));
+          setComments(formattedComments);
+        }
+      } catch (error) {
+        console.error("Error in comment fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchComments();
+  }, [productId]);
+
+  const handleSubmitComment = async () => {
     if (!isAuthenticated) {
       toast.error(language === 'ar' ? "يرجى تسجيل الدخول للتعليق" : "Please login to comment");
       return;
@@ -41,23 +86,50 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
       return;
     }
 
-    // In a real app, this would be a call to your API
-    const comment: Comment = {
-      id: Math.random().toString(36).substring(2, 9),
-      text: newComment,
-      createdAt: new Date(),
-      author: {
-        name: user?.profile?.full_name || 'المستخدم',
-        avatar: user?.profile?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff",
-      },
-    };
-
-    setComments([comment, ...comments]);
-    setNewComment("");
-    toast.success(language === 'ar' ? "تم إضافة التعليق بنجاح" : "Comment added successfully");
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          text: newComment,
+          product_id: productId,
+          user_id: user?.id
+        })
+        .select(`
+          id,
+          text,
+          created_at,
+          user_id,
+          profiles(full_name, avatar)
+        `)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const newCommentObj = {
+          id: data.id,
+          text: data.text,
+          created_at: data.created_at,
+          author: {
+            name: data.profiles?.full_name || user?.profile?.full_name || 'User',
+            avatar: data.profiles?.avatar || user?.profile?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff",
+          }
+        };
+        
+        setComments([newCommentObj, ...comments]);
+        setNewComment("");
+        toast.success(language === 'ar' ? "تم إضافة التعليق بنجاح" : "Comment added successfully");
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast.error(language === 'ar' ? "حدث خطأ أثناء إضافة التعليق" : "Error adding comment");
+    }
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat(language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
@@ -104,7 +176,19 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
       </div>
 
       {/* Comments list */}
-      {comments.length > 0 ? (
+      {isLoading ? (
+        <div className="space-y-4 mt-6">
+          {[1, 2, 3].map((_, i) => (
+            <div key={i} className="flex gap-3 p-3 border rounded-lg animate-pulse">
+              <div className="h-10 w-10 rounded-full bg-muted"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded w-1/4"></div>
+                <div className="h-4 bg-muted rounded w-full"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : comments.length > 0 ? (
         <div className="space-y-4 mt-6">
           {comments.map((comment) => (
             <div key={comment.id} className="flex gap-3 p-3 border rounded-lg">
@@ -115,7 +199,7 @@ export function CommentSection({ productId, initialComments = [] }: CommentSecti
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-medium">{comment.author.name}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
                 </div>
                 <p className="text-sm">{comment.text}</p>
               </div>

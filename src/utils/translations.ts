@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     home: 'Home',
@@ -30,6 +31,10 @@ export const translations = {
     success: 'Success',
     warning: 'Warning',
     info: 'Info',
+    viewAll: 'View All',
+    featuredListings: 'Featured Listings',
+    recentListings: 'Recent Listings',
+    popularSearches: 'Popular Searches',
   },
   ar: {
     home: 'الرئيسية',
@@ -62,5 +67,9 @@ export const translations = {
     success: 'نجاح',
     warning: 'تحذير',
     info: 'معلومات',
+    viewAll: 'عرض الكل',
+    featuredListings: 'إعلانات مميزة',
+    recentListings: 'أحدث الإعلانات',
+    popularSearches: 'عمليات البحث الشائعة',
   },
 };
