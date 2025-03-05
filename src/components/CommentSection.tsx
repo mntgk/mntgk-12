@@ -28,7 +28,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { isAuthenticated, user } = useAuth();
 
   // Fetch comments for this product
@@ -54,7 +54,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
         }
         
         if (data) {
-          const formattedComments = data.map(comment => ({
+          const formattedComments = data.map((comment: any) => ({
             id: comment.id,
             text: comment.text,
             created_at: comment.created_at,
@@ -77,12 +77,12 @@ export function CommentSection({ productId }: CommentSectionProps) {
 
   const handleSubmitComment = async () => {
     if (!isAuthenticated) {
-      toast.error(language === 'ar' ? "يرجى تسجيل الدخول للتعليق" : "Please login to comment");
+      toast.error(t('loginToComment'));
       return;
     }
 
     if (!newComment.trim()) {
-      toast.error(language === 'ar' ? "لا يمكن إرسال تعليق فارغ" : "Cannot send an empty comment");
+      toast.error(t('emptyCommentError'));
       return;
     }
 
@@ -120,11 +120,11 @@ export function CommentSection({ productId }: CommentSectionProps) {
         
         setComments([newCommentObj, ...comments]);
         setNewComment("");
-        toast.success(language === 'ar' ? "تم إضافة التعليق بنجاح" : "Comment added successfully");
+        toast.success(t('commentAdded'));
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      toast.error(language === 'ar' ? "حدث خطأ أثناء إضافة التعليق" : "Error adding comment");
+      toast.error(t('commentError'));
     }
   };
 
@@ -142,7 +142,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-bold">
-        {language === 'ar' ? 'التعليقات' : 'Comments'} ({comments.length})
+        {t('comments')} ({comments.length})
       </h3>
       
       {/* Comment form */}
@@ -158,7 +158,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
         </Avatar>
         <div className="flex-1">
           <Textarea
-            placeholder={language === 'ar' ? "اكتب تعليقك هنا..." : "Write your comment here..."}
+            placeholder={t('writeComment')}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             className="mb-2"
@@ -170,7 +170,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
             className="flex items-center ml-auto"
           >
             <Send className="h-4 w-4 ml-1" />
-            <span>{language === 'ar' ? 'إرسال' : 'Send'}</span>
+            <span>{t('sendComment')}</span>
           </Button>
         </div>
       </div>
@@ -208,7 +208,7 @@ export function CommentSection({ productId }: CommentSectionProps) {
         </div>
       ) : (
         <div className="text-center py-6 text-muted-foreground">
-          {language === 'ar' ? 'لا توجد تعليقات بعد. كن أول من يعلق!' : 'No comments yet. Be the first to comment!'}
+          {t('noCommentsYet')}
         </div>
       )}
     </div>
