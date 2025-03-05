@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { CommentForm } from "./CommentForm";
-import { CommentList } from "./CommentList";
+import { CommentForm } from "@/components/comments/CommentForm";
+import { CommentList } from "@/components/comments/CommentList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
