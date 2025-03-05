@@ -16,7 +16,12 @@ import { useProductDetail, ProductDetailSkeleton, ProductNotFound } from "@/comp
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { language } = useLanguage();
-  const { product, seller, loading, similarProducts } = useProductDetail(productId);
+  const { product, seller, loading, error, similarProducts } = useProductDetail(productId);
+
+  console.log("Product Detail Render - productId:", productId);
+  console.log("Product Detail Render - product:", product);
+  console.log("Product Detail Render - loading:", loading);
+  console.log("Product Detail Render - error:", error);
 
   if (loading) {
     return (
@@ -31,7 +36,7 @@ const ProductDetail = () => {
   }
 
   // If productId doesn't exist or product not found
-  if (!productId || !product) {
+  if (!productId || error || !product) {
     return (
       <div className="min-h-screen bg-background pb-20">
         <Navbar />
@@ -54,7 +59,7 @@ const ProductDetail = () => {
   // Prepare seller info for display
   const sellerInfo = {
     id: product.user_id,
-    name: seller?.full_name || "المستخدم",
+    name: seller?.full_name || (language === 'ar' ? "المستخدم" : "User"),
     image: seller?.avatar || "https://ui-avatars.com/api/?name=User&background=random&color=fff",
     isVerified: true,
     memberSince: seller?.join_date || "2023",

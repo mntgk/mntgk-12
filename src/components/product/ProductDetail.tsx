@@ -5,12 +5,14 @@ import { ChevronLeft } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function useProductDetail(productId: string | undefined) {
   const { user } = useAuth();
   const [product, setProduct] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -18,20 +20,27 @@ export function useProductDetail(productId: string | undefined) {
 
     const fetchProductDetails = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
+        console.log("Fetching product details for ID:", productId);
+        
         // Get the product
         const { data: productData, error: productError } = await supabase
           .from('products')
           .select('*')
           .eq('id', productId)
-          .single();
+          .maybeSingle();
 
         if (productError) {
           console.error("Error fetching product details:", productError);
+          setError("Failed to load product details");
           setLoading(false);
           return;
         }
 
+        console.log("Product data fetched:", productData);
+        
         if (productData) {
           setProduct(productData);
           
@@ -40,11 +49,12 @@ export function useProductDetail(productId: string | undefined) {
             .from('profiles')
             .select('*')
             .eq('id', productData.user_id)
-            .single();
+            .maybeSingle();
 
           if (sellerError) {
             console.error("Error fetching seller details:", sellerError);
           } else {
+            console.log("Seller data fetched:", sellerData);
             setSeller(sellerData);
           }
           
@@ -59,11 +69,17 @@ export function useProductDetail(productId: string | undefined) {
           if (similarError) {
             console.error("Error fetching similar products:", similarError);
           } else {
+            console.log("Similar products fetched:", similarData);
             setSimilarProducts(similarData || []);
           }
+        } else {
+          // No product found for this ID
+          setError("Product not found");
+          console.log("No product found with ID:", productId);
         }
       } catch (error) {
-        console.error("Error in product detail fetch:", error);
+        console.error("Unexpected error in product detail fetch:", error);
+        setError("An unexpected error occurred");
       } finally {
         setLoading(false);
       }
@@ -80,7 +96,7 @@ export function useProductDetail(productId: string | undefined) {
     }
   }, [product, productId, user]);
 
-  return { product, seller, loading, similarProducts };
+  return { product, seller, loading, error, similarProducts };
 }
 
 export function ProductDetailSkeleton() {
